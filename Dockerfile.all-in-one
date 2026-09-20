@@ -1,0 +1,147 @@
+# Single-container image: frontend, API, worker, Postgres/PostGIS and Redis.
+#
+# The multi-service docker-compose.yml remains the development path and stays
+# the recommended way to run this. This image exists for the "one container"
+# deployment case, and it is a different trade-off rather than a strict
+# improvement, so the differences are worth stating up front:
+#
+#   * Everything shares one network namespace, so the frontend's nginx proxies
+#     /api to 127.0.0.1:8000 instead of the `backend` hostname. The hostname
+#     does not resolve in a single container, and that is the first thing that
+#     breaks if this file is copied from the compose version.
+#   * A supervisor is required. There is no container-per-process isolation, so
+#     if Postgres dies the API stays up and starts returning 500s instead of
+#     being restarted by the orchestrator.
+#   * The database lives in a volume on the same host as everything else.
+#
+# What is NOT in here: a demo-data seed, and any TLS termination. The image
+# serves plain HTTP on 3000. Putting it on a public address needs a reverse
+# proxy in front of it, and ENABLE_DEMO_MODE still defaults to off, so a fresh
+# volume serves no synthetic Airoli records.
+
+# ---- Frontend: build the static bundle -------------------------------------
+FROM node:20-alpine AS frontend-build
+WORKDIR /fe
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+# Vite inlines VITE_* variables at build time, so the CARTO basemap key has to
+# be present here rather than at runtime. Baked into a public bundle, which is
+# expected for a raster basemap key and is why CARTO publishes rather than
+# hides them; the meaningful control is a domain restriction in their
+# dashboard. An unkeyed build does not fail, it silently draws a flat grey
+# placeholder, so this is worth checking rather than assuming.
+ARG VITE_CARTO_API_KEY=""
+ARG VITE_API_URL=/api/v1
+ENV VITE_CARTO_API_KEY=${VITE_CARTO_API_KEY} VITE_API_URL=${VITE_API_URL}
+RUN npm run build
+
+# ---- Native helper ----------------------------------------------------------
+# One shared build, so the single-container image and the compose `backend`
+# service cannot drift: both compile backend/native from the same source.
+FROM rust:1-slim AS native-builder
+WORKDIR /native
+COPY backend/native/ .
+RUN cargo build --release
+
+# ---- Everything in one layer ----------------------------------------------
+#
+# NOT `FROM <the amd64 backend image>`. That was a local build-time shortcut and
+# it is wrong for any other machine: the deploy host is aarch64, and an amd64
+# image there fails with "exec format error" unless qemu binfmt is registered.
+# This stage is therefore self-contained and architecture-neutral, so the same
+# Dockerfile builds amd64 and arm64.
+#
+# The cost is that shapely/pyproj/gdal/rasterio are installed from
+# backend/requirements.txt again here, which is the slowest step in the build.
+FROM python:3.11-slim-bookworm AS runtime
+
+ARG POSTGRES_DB=bhudrishti_3d
+ARG POSTGRES_USER=bhudrishti
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    ENVIRONMENT=development \
+    ENABLE_DEMO_MODE=0 \
+    POSTGRES_DB=${POSTGRES_DB} \
+    POSTGRES_USER=${POSTGRES_USER} \
+    # Single container, so every service is reached over loopback. This is the
+    # one line that cannot be copied from docker-compose.yml, where the hosts
+    # are `postgres` and `redis`.
+    POSTGRES_SERVER=127.0.0.1 \
+    POSTGRES_PORT=5432 \
+    REDIS_HOST=127.0.0.1 \
+    REDIS_PORT=6379
+
+# No MINIO_*: nothing in this image runs an object store, and
+# SpatialStorageService already falls back to local disk when the endpoint is
+# unreachable.
+#
+# SECRET_KEY, POSTGRES_PASSWORD and the Ed25519 key pair are deliberately absent.
+# They were previously baked in as development defaults, which meant every
+# published copy of this image shipped a working JWT signing key and a known
+# database password -- anyone who pulled the image could mint tokens for any
+# role. They are required at `docker run` time instead, and the app refuses to
+# start in production without them.
+#
+# The trailing backslash is gone from REDIS_PORT above for the same reason this
+# comment block is outside the ENV: a continuation line cannot be followed by
+# comments, and the build fails with "Syntax error - can't find = in RUN".
+
+# postgresql-16 comes from the PGDG repo, because bookworm's own apt ships
+# PostgreSQL 15. The PostGIS version has to match what the compose stack runs, or
+# a database directory created by one image is unreadable by the other. The repo
+# is added and refreshed BEFORE the install that needs it, not after.
+#
+# The base image is pinned to -bookworm on purpose. Unpinned `python:3.11-slim`
+# now resolves to trixie, and trixie renamed the shared libraries this needs
+# (libicu72, libldap-2.5-0, libgdal32, libsfcgal1), so the bookworm PGDG repo
+# below resolves to nothing installable and the build dies with "Depends: ... but
+# it is not installable". Pin both sides together.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg \
+      gcc g++ libpq-dev libgeos-dev \
+      nginx \
+      redis-server \
+      supervisor \
+    && install -d -m 0755 /usr/share/postgresql-common/pgdg \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+         https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+       > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      postgresql-16 postgresql-16-postgis-3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY backend/requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY backend/ ./
+COPY --from=native-builder /native/target/release/bhudrishti_native /usr/local/bin/bhudrishti_native
+
+COPY --from=frontend-build /fe/dist /usr/share/nginx/html
+COPY docker/nginx-single.conf /etc/nginx/conf.d/default.conf
+# The single-container nginx.conf `include`s the security headers by absolute
+# path, exactly as the frontend image does, so the snippet has to exist at that
+# path in this image too.
+COPY docker/nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/bhudrishti.conf
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# PGDG's postgres runs as `postgres`; the API and worker run as root here so
+# they can keep writing to /app/data. Two users, one container: unavoidable, and
+# the reason the data directory is chowned in the entrypoint rather than here.
+RUN mkdir -p /app/data /var/lib/postgresql/data /var/run/postgresql \
+    && chown -R postgres:postgres /var/lib/postgresql/data /var/run/postgresql \
+    && chmod 2775 /var/lib/postgresql/data
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=90s --retries=12 \
+  CMD curl -fsS http://localhost:3000/health || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]

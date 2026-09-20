@@ -1,0 +1,562 @@
+name: Bhu-Drishti 3D CI / Test Suite
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  POSTGRES_DB: bhudrishti_3d
+  POSTGRES_USER: bhudrishti
+  POSTGRES_PASSWORD: bhudrishti_secure_spatial_2026
+
+jobs:
+  backend-tests:
+    name: Backend Test Suite & Regressions
+    runs-on: ubuntu-latest
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: bhudrishti_3d
+          POSTGRES_USER: bhudrishti
+          POSTGRES_PASSWORD: bhudrishti_secure_spatial_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bhudrishti -d bhudrishti_3d"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install system dependencies (GEOS / Proj)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgeos-dev libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest httpx reportlab openpyxl
+
+      # The suite reads source files out of frontend/src as well as calling the
+      # API, so it needs the whole repository, not just the backend package.
+      # It also needs schema plus one jurisdiction row before it means anything:
+      # test_builder_disposition and test_builder_footprint take a
+      # jurisdiction_id from `SELECT id FROM jurisdictions LIMIT 1` and call
+      # .scalar_one(), which raises NoResultFound on an empty database. Without
+      # this step those two failed on a fresh CI database and passed only on a
+      # re-run, so the suite was order-dependent. See
+      # tests/fixtures/ensure_fixtures.py.
+      - name: Prepare test database (schema + fixtures)
+        env:
+          PYTHONPATH: backend
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+        run: python tests/fixtures/ensure_fixtures.py
+
+      - name: Run Pytest Test Suite (with PostGIS + Redis services)
+        env:
+          PYTHONPATH: backend
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          REDIS_HOST: localhost
+        run: |
+          mkdir -p artifacts
+          pytest tests/ -v --tb=short --junitxml=artifacts/pytest.xml
+
+      - name: Upload Pytest Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: artifacts/pytest.xml
+          if-no-files-found: warn
+
+  backend-api-smoke:
+    name: Backend API Smoke Tests (live HTTP)
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: bhudrishti_3d
+          POSTGRES_USER: bhudrishti
+          POSTGRES_PASSWORD: bhudrishti_secure_spatial_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bhudrishti -d bhudrishti_3d"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install system dependencies (GEOS / Proj)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgeos-dev libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Boot backend and run live API smoke checks
+        env:
+          PYTHONPATH: backend
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          REDIS_HOST: localhost
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 &
+          APP_PID=$!
+          trap 'kill $APP_PID 2>/dev/null || true' EXIT
+
+          # Wait for readiness (real health probe, no blind sleep)
+          READY=0
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then READY=1; break; fi
+            sleep 1
+          done
+          [ "$READY" = "1" ] || { echo "ERROR: backend did not become ready"; exit 1; }
+
+          fails=0
+          check() { eval "$2" && echo "PASS: $1" || { echo "FAIL: $1"; fails=$((fails+1)); }; }
+          CURL="curl -fsS -o /tmp/out -w %{http_code}"
+
+          check "health endpoint returns 200/HEALTHY" \
+            "code=\$($CURL http://127.0.0.1:8000/health) && [ \"\$code\" = \"200\" ] && grep -q HEALTHY /tmp/out"
+
+          check "demo login (state.admin) returns token" \
+            "code=\$(curl -fsS -o /tmp/login.json -w %{http_code} -X POST http://127.0.0.1:8000/api/v1/auth/login -d 'username=state.admin&password=demo@2026') && [ \"\$code\" = \"200\" ] && grep -q access_token /tmp/login.json"
+
+          check "global search resolves hero ULPIN" \
+            "code=\$($CURL \"http://127.0.0.1:8000/api/v1/search?q=12345678901234\") && [ \"\$code\" = \"200\" ]"
+
+          check "hero property-card PDF is valid PDF" \
+            "code=\$($CURL http://127.0.0.1:8000/api/v1/exports/pdf/property-card/12345678901234) && [ \"\$code\" = \"200\" ] && head -c 4 /tmp/out | grep -q '%PDF' && [ \$(wc -c </tmp/out) -gt 5000 ]"
+
+          check "arbitrary-ULPIN property-card never 404s" \
+            "code=\$($CURL http://127.0.0.1:8000/api/v1/exports/pdf/property-card/3D-ULPIN-NZIUOTK4MJZFMT) && [ \"\$code\" = \"200\" ] && head -c 4 /tmp/out | grep -q '%PDF'"
+
+          check "LiDAR binary stream is 8-float32 records" \
+            "code=\$(curl -fsS -o /tmp/lidar.bin -D /tmp/lidar.hdr -w %{http_code} 'http://127.0.0.1:8000/api/v1/lidar/pointcloud/binary?ulpin=3D-ULPIN-NZIUOTK4MJZFMT') && [ \"\$code\" = \"200\" ] && grep -qi octet-stream /tmp/lidar.hdr && n=\$(grep -i 'x-point-count' /tmp/lidar.hdr | tr -dc '0-9') && [ \"\$n\" -gt 0 ] && b=\$(wc -c </tmp/lidar.bin) && [ \"\$((b % 32))\" = \"0\" ]
+
+          jq -n --arg status "$([ $fails -eq 0 ] && echo PASS || echo FAIL)" --argjson fails "$fails" \
+            '{status:$status, checks_executed:6, failures:$fails, checked_at:(now|todate)}' \
+            > artifacts/api-smoke.json
+
+          echo "----- API SMOKE REPORT -----"
+          cat artifacts/api-smoke.json
+          [ "$fails" -eq 0 ] || exit 1
+
+      - name: Upload API Smoke Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-smoke-report
+          path: artifacts/api-smoke.json
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # Real-data (production) gate.
+  #
+  # Every other backend job runs with the demo gate OPEN, because
+  # tests/conftest.py does ENABLE_DEMO_MODE=1 and the smoke job above asserts
+  # the generated Airoli showcase is served. That left the committed default
+  # unverified: ENABLE_DEMO_MODE is empty in .env.example and 0 in
+  # docker-compose, so the deployment that actually ships serves no synthetic
+  # data, yet no test ever booted the app that way.
+  #
+  # The failure this catches is silent and severe. If a refactor drops
+  # require_demo_mode() or a router dependency, every test still passes
+  # (the gate is forced open suite-wide) while production quietly starts
+  # serving invented ULPINs, footprints and an FSI figure no authority
+  # published, behind a 200. This job boots the app with the gate shut and
+  # asserts it refuses.
+  # ---------------------------------------------------------------------------
+  production-demo-gate:
+    name: Production Default (demo gate shut) refuses synthetic data
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: bhudrishti_3d
+          POSTGRES_USER: bhudrishti
+          POSTGRES_PASSWORD: bhudrishti_secure_spatial_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bhudrishti -d bhudrishti_3d"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install system dependencies (GEOS / Proj)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgeos-dev libpq-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Assert the committed default is OFF
+        run: |
+          set -euo pipefail
+          # .env.example ships the flag empty, meaning off. If this ever reads
+          # as truthy, the deployment default itself is wrong and every check
+          # below would be testing the wrong configuration.
+          if grep -E '^ENABLE_DEMO_MODE=.+' .env.example; then
+            echo "ERROR: .env.example must not enable demo mode (a real deployment is the default)"
+            exit 1
+          fi
+          grep -q 'ENABLE_DEMO_MODE=\${ENABLE_DEMO_MODE:-0}' docker-compose.yml \
+            || { echo "ERROR: docker-compose must default ENABLE_DEMO_MODE to 0"; exit 1; }
+          echo "PASS: committed default is demo-off"
+
+      - name: Boot backend with ENABLE_DEMO_MODE=0 and verify it refuses synthetic data
+        env:
+          PYTHONPATH: backend
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          REDIS_HOST: localhost
+          ENABLE_DEMO_MODE: '0'
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          # Explicitly OFF, overriding anything inherited from the runner.
+          ENABLE_DEMO_MODE=0 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 &
+          APP_PID=$!
+          trap 'kill $APP_PID 2>/dev/null || true' EXIT
+
+          READY=0
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then READY=1; break; fi
+            sleep 1
+          done
+          [ "$READY" = "1" ] || { echo "ERROR: backend did not become ready"; exit 1; }
+
+          fails=0
+          check() { eval "$2" && echo "PASS: $1" || { echo "FAIL: $1"; fails=$((fails+1)); }; }
+          CURL="curl -fsS -o /tmp/pgout -w %{http_code}"
+
+          # The app must still start and serve real-data routes. "No data yet"
+          # is a valid state, not a crash.
+          check "app starts and /health is 200 with the gate shut" \
+            "code=\$($CURL http://127.0.0.1:8000/health) && [ \"\$code\" = \"200\" ]"
+
+          # Synthetic surfaces must refuse: 503 from require_demo_mode /
+          # demo_mode_dependency, 404 where a route is not mounted at all.
+          for spec in \
+            "GET|/api/v1/precinct/stats" \
+            "GET|/api/v1/properties/hero" \
+            "GET|/api/v1/ids/national-ulpin/parcels?boundary_code=MH-AHMADNAGAR-NAGAR-1" \
+            "POST|/api/v1/ids/national-ulpin/verify-parcel?ulpin=BHU0000000000X" \
+            "GET|/api/v1/lidar/pointcloud/binary?ulpin=12345678901234" \
+          ; do
+            m="${spec%%|*}"; p="${spec#*|}"
+            check "$m $p refuses generated data" \
+              "code=\$(curl -sS -o /dev/null -w %{http_code} -X \$m \"http://127.0.0.1:8000\$p\") && [ \"\$code\" = \"503\" ] || [ \"\$code\" = \"404\" ] || [ \"\$code\" = \"403\" ]"
+          done
+
+          # Refusals must not echo the synthetic record back.
+          check "refusal bodies leak no synthetic markers" \
+            "! curl -sS 'http://127.0.0.1:8000/api/v1/properties/hero' | grep -qiE '12345678901234|permitted_fsi|MMRDA|NMMC'"
+
+          # Pure computation stays available: it derives a deterministic
+          # string from supplied geometry, persists nothing, and is
+          # self-describing. Gating it would be over-reach.
+          check "pure ULPIN spec route is NOT gated" \
+            "code=\$($CURL http://127.0.0.1:8000/api/v1/ids/national-ulpin/spec) && [ \"\$code\" = \"200\" ]"
+
+          jq -n --arg status "$([ $fails -eq 0 ] && echo PASS || echo FAIL)" --argjson fails "$fails" \
+            '{status:$status, mode:"ENABLE_DEMO_MODE=0", failures:$fails, checked_at:(now|todate)}' \
+            > artifacts/production-gate.json
+
+          echo "----- PRODUCTION GATE REPORT -----"
+          cat artifacts/production-gate.json
+          [ "$fails" -eq 0 ] || exit 1
+
+      - name: Upload Production Gate Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-gate-report
+          path: artifacts/production-gate.json
+          if-no-files-found: warn
+
+  frontend-build:
+    name: Frontend Typecheck & Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Verify TypeScript & Build Vite Production Bundle
+        working-directory: ./frontend
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Browser end-to-end suite (Playwright) against a real running stack.
+  #
+  # The repo shipped no browser test infrastructure at all until
+  # playwright.config.ts and e2e/*.spec.ts were added, and they were never run
+  # by CI. Everything about the map and 3D views was therefore verified only by
+  # tests/frontend_source.py, which scrapes source text and cannot observe a
+  # frame. That is a real gap, and it is not theoretical: this job's first run
+  # surfaced two genuine defects that had been sitting in main.
+  #
+  #   1. A GPU resource leak. The viewer's main scene effect has
+  #      `selectedUnit` and `isSliceActive` in its dependency array, so it
+  #      rebuilds every unit mesh on ordinary interaction. Its cleanup removed
+  #      listeners and disposed the renderer but never disposed a single
+  #      BufferGeometry or Material, stranding the previous set on the GPU each
+  #      run. renderer.info.memory.geometries came back +1 after five area
+  #      switches back to the starting area.
+  #   2. A stale test asserting a regulatory verdict the product had already
+  #      stopped making (see the B-12 assertion in instanced-scene.spec.ts).
+  #
+  # DEMO MODE IS ON HERE, DELIBERATELY. The browser suite asserts map/3D
+  # behaviour against the generated Airoli showcase, so it needs the demo gate
+  # open and a reachable backend. That is test fixture data and this job must
+  # not be read as evidence that a deployment may serve it: the separate
+  # `production-demo-gate` job boots the app with the committed default
+  # (ENABLE_DEMO_MODE=0) and asserts it refuses synthetic data, and it also
+  # asserts that .env.example and docker-compose.yml keep the default at 0.
+  # Both jobs are needed: one proves the UI works on fixtures, the other proves
+  # the shipped default cannot quietly serve them.
+  #
+  # Playwright has no `webServer` block, so this job boots Postgres, Redis, the
+  # API and the Vite dev server itself. WebGL in headless Chromium runs on
+  # SwiftShader (see CHROMIUM_ARGS in playwright.config.ts), so no GPU runner
+  # is required, but every frame measurement is software-rendered and therefore
+  # slower and noisier than a real GPU. The suite runs workers:1 for that
+  # reason, and the perf gate is a leak/context budget check rather than an
+  # absolute frame-time SLA.
+  # ---------------------------------------------------------------------------
+  frontend-e2e:
+    name: Browser E2E (Playwright, real backend + fixtures)
+    runs-on: ubuntu-latest
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: bhudrishti_3d
+          POSTGRES_USER: bhudrishti
+          POSTGRES_PASSWORD: bhudrishti_secure_spatial_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bhudrishti -d bhudrishti_3d"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+
+      - name: Install system dependencies (GEOS / Proj)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgeos-dev libpq-dev
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Typecheck the e2e specs themselves
+        working-directory: ./frontend
+        run: npm run typecheck:e2e
+
+      - name: Install Playwright Chromium and OS dependencies
+        working-directory: ./frontend
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Boot API and Vite dev server, then run the browser suite
+        env:
+          PYTHONPATH: backend
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          REDIS_HOST: localhost
+          ENABLE_DEMO_MODE: '1'
+          VITE_PROXY_TARGET: http://127.0.0.1:8000
+          VITE_API_URL: /api/v1
+        run: |
+          set -euo pipefail
+          mkdir -p frontend/e2e/.artifacts
+
+          # API. ENABLE_DEMO_MODE=1 is required for the fixtures the browser
+          # suite asserts against; see the job comment.
+          python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 &
+          API_PID=$!
+
+          # Frontend. VITE_PROXY_TARGET points the dev server's /api proxy at
+          # the uvicorn port above; the default is the compose hostname
+          # `backend:8000`, which does not resolve on a GitHub runner.
+          (cd frontend && npm run dev -- --host 127.0.0.1 --port 3000) &
+          WEB_PID=$!
+
+          cleanup() {
+            kill "$WEB_PID" 2>/dev/null || true
+            kill "$API_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          # Wait for both, by real probe rather than a blind sleep.
+          API_READY=0
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then API_READY=1; break; fi
+            sleep 1
+          done
+          [ "$API_READY" = "1" ] || { echo "ERROR: API did not become ready"; exit 1; }
+
+          WEB_READY=0
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3000/; then WEB_READY=1; break; fi
+            sleep 1
+          done
+          [ "$WEB_READY" = "1" ] || { echo "ERROR: web server did not become ready"; exit 1; }
+
+          # Prove the fixtures this suite depends on are actually being served,
+          # so a green run cannot be explained by the demo gate being shut.
+          curl -fsS "http://127.0.0.1:8000/api/v1/search?q=12345678901234" >/dev/null \
+            || { echo "ERROR: hero ULPIN not resolvable; fixtures missing"; exit 1; }
+
+          cd frontend
+          npx playwright test
+
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/e2e/.artifacts
+          if-no-files-found: warn
+          retention-days: 7
+
+  doc-drift-validation:
+    name: Documentation Verification & Drift Check
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Run Documentation Verification Engine
+        run: python3 scripts/verify-docs.py
+
+      - name: Upload Verification Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-verification-report
+          path: artifacts/documentation-verification.json
+          if-no-files-found: warn

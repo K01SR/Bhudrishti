@@ -1,0 +1,243 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: bhudrishti_postgres
+    restart: unless-stopped
+    command: ["postgres", "-c", "max_connections=300"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bhudrishti_3d}
+      POSTGRES_USER: ${POSTGRES_USER:-bhudrishti}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bhudrishti_secure_spatial_2026}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bhudrishti} -d ${POSTGRES_DB:-bhudrishti_3d}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:alpine
+    container_name: bhudrishti_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Object storage is intentionally not run here. SpatialStorageService falls
+  # back to the local filesystem when MinIO is unreachable, and that is the path
+  # this stack exercises. The commented-out block that used to live here also
+  # carried a working default root password in the repo, and backend/worker
+  # still pointed MINIO_ENDPOINT at a `minio` host that no service defined, so
+  # every storage call started with a DNS failure before hitting the fallback.
+  # To use MinIO instead, add the service and set MINIO_ROOT_USER /
+  # MINIO_ROOT_PASSWORD in .env; config.py already reads them from the
+  # environment.
+  # minio:
+  #   image: quay.io/minio/minio:latest
+  #   container_name: bhudrishti_minio
+  #   restart: unless-stopped
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   volumes:
+  #     - minio_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bhudrishti_backend
+    restart: unless-stopped
+    # Uvicorn workers. Defaults to 1, the configuration every measurement in
+    # tests/load/README.md was taken under, so the default keeps those numbers
+    # meaningful.
+    #
+    # This is the throughput lever, not a free win. Each worker is a separate
+    # process with its own event loop and its own DB connections, so the budget
+    # has to be respected: postgres runs max_connections=300 (see the postgres
+    # service command) and is shared with the celery worker plus the per-call
+    # engines in app/tiles/tiles.py and app/scene/scene_architect.py.
+    #
+    # Raising this above 1 is only safe once the async engine question is
+    # settled. The shared async_engine is NullPool today, which is correct for a
+    # single loop but is exactly the wrong shape once a second loop exists; see
+    # backend/app/core/database.py for why pooling was reverted. A pooled
+    # multi-worker run previously exhausted all 300 connections with 166
+    # backends idle-in-transaction at BEGIN while the pool reported zero
+    # checked-out connections, so raise this deliberately and re-measure, not
+    # optimistically.
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "${UVICORN_WORKERS:-1}"
+    environment:
+      - ENVIRONMENT=development
+      # Synthetic data (generated Airoli records, national twin/parcel geometry,
+      # the bundled sample LAS) is OFF unless this is truthy. Unset or 0 = a
+      # real-data-only deployment that refuses to serve it.
+      - ENABLE_DEMO_MODE=${ENABLE_DEMO_MODE:-0}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-bhudrishti}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bhudrishti_secure_spatial_2026}
+      - POSTGRES_DB=${POSTGRES_DB:-bhudrishti_3d}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # No MINIO_* here: no object-storage service is defined in this file, and
+      - SpatialStorageService already falls back to local disk when the endpoint
+      # is unreachable. Set MINIO_ENDPOINT and credentials in .env to use MinIO.
+      # data.gov.in (OGD). These were previously absent here while .env carried
+      # an OGD_API_KEY, which made that key dead configuration: it sat on disk,
+      # was never delivered to the process, and app.sources.ogd could only ever
+      # raise NoAuthenticSourceError no matter what the operator set. The
+      # /api/v1/datasources/status endpoint correctly reported data.gov.in as
+      # unconfigured the whole time, which is what surfaced it.
+      #
+      # Defaults are empty, not invented: app.sources.status declares
+      # required_env=("OGD_API_KEY", "OGD_RESOURCE_ID"), so with either unset the
+      # provider stays honestly "unconfigured" rather than attempting a call it
+      # cannot authenticate. OGD_RESOURCE_ID is required too -- a key alone
+      # enables nothing, because the catalog resource this deployment would
+      # read has never been verified as authoritative.
+      # Ed25519 keypair for audit-chain checkpoints. The private key signs the
+      # chain head outside the database, which is what detects a forgery that
+      # rewrites audit_events and recomputes its own hashes.
+      #
+      # Deliberately NOT defaulted from .env: test_signing_key_hygiene.py
+      # forbids a key committed to or sitting in .env, and it is right to. A key
+      # next to POSTGRES_PASSWORD puts the anchor inside the blast radius of the
+      # database credential it is supposed to be independent of. Inject at
+      # deploy time instead, e.g.
+      #   docker compose up -d --force-recreate \
+      #     -e ED25519_PRIVATE_KEY_HEX  (not supported by compose; export in the
+      #     shell or use a secrets file mounted into the container)
+      # Empty means checkpoints are stored unsigned and reported as such rather
+      # than trusted; see /api/v1/verification/chain/checkpoints.
+      - ED25519_PRIVATE_KEY_HEX=
+      - ED25519_PUBLIC_KEY_HEX=
+      - OGD_API_KEY=${OGD_API_KEY:-}
+      - OGD_RESOURCE_ID=${OGD_RESOURCE_ID:-}
+      - OGD_BASE_URL=${OGD_BASE_URL:-https://api.data.gov.in}
+      - SECRET_KEY=${SECRET_KEY:-bhu_drishti_3d_super_secret_jwt_key_airoli_2026_cadastre}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 20s
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bhudrishti_worker
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app worker --loglevel=info
+    environment:
+      - ENVIRONMENT=development
+      # Synthetic data (generated Airoli records, national twin/parcel geometry,
+      # the bundled sample LAS) is OFF unless this is truthy. Unset or 0 = a
+      # real-data-only deployment that refuses to serve it.
+      - ENABLE_DEMO_MODE=${ENABLE_DEMO_MODE:-0}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-bhudrishti}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-bhudrishti_secure_spatial_2026}
+      - POSTGRES_DB=${POSTGRES_DB:-bhudrishti_3d}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # No MINIO_* here: no object-storage service is defined in this file, and
+      # SpatialStorageService already falls back to local disk when the endpoint
+      # is unreachable. Set MINIO_ENDPOINT and credentials in .env to use MinIO.
+      # Ingestion runs in this worker, not only in the API, so the OGD
+      # credentials have to reach it as well. See the backend block for why
+      # these default to empty and why a key on its own enables nothing.
+      - OGD_API_KEY=${OGD_API_KEY:-}
+      - OGD_RESOURCE_ID=${OGD_RESOURCE_ID:-}
+      - OGD_BASE_URL=${OGD_BASE_URL:-https://api.data.gov.in}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bhudrishti_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Public TLS edge. Opt-in via `docker compose --profile edge up -d` so that a
+  # plain `docker compose up` behaves exactly as it did before this was added.
+  #
+  # It publishes 80/443 and forwards to frontend:3000, which in turn serves the
+  # SPA and proxies /api to the backend. Adding it does not restart or rewire
+  # any existing container, and the tunnel on port 3000 keeps working alongside
+  # it, so the two URLs can be verified before either is retired.
+  caddy:
+    image: caddy:2-alpine
+    container_name: bhudrishti_caddy
+    restart: unless-stopped
+    profiles: ["edge"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      # Defaults rather than the `:?` required form on purpose. Compose
+      # interpolates every service's environment even when the service is behind
+      # an inactive profile, so `:?` would break a plain `docker compose up` for
+      # anyone who has not set these yet. They only need real values to run
+      # `--profile edge`.
+      - DOMAIN=${DOMAIN:-localhost}
+      - ACME_EMAIL=${ACME_EMAIL:-nobody@localhost}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Named volumes, not bind mounts, so certificates survive a rebuild and
+      # are not left behind in the working tree.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,254 @@
+name: Container Build & Publish
+
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  backend-image:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+          labels: |
+            org.opencontainers.image.title=Bhu-Drishti 3D Backend
+            org.opencontainers.image.description=National 3D ULPIN Generation and Vertical Property Mapping API
+            org.opencontainers.image.licenses=Proprietary
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          # Rust kernel + asyncio join: buildx cache prevents recompiles on repeated backend-only pushes
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Smoke-test backend image against live PostGIS + Redis
+        if: github.ref == 'refs/heads/master'
+        run: |
+          set -euo pipefail
+
+          BASE_IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -1)
+          echo "Smoke testing image: $BASE_IMAGE"
+
+          # Real PostGIS + Redis backing the smoke container (no faked dependencies)
+          docker run --name smoke-postgis -d -e POSTGRES_DB=bhudrishti_3d \
+            -e POSTGRES_USER=bhudrishti -e POSTGRES_PASSWORD=bhudrishti_secure_spatial_2026 \
+            postgis/postgis:16-3.4-alpine
+          docker run --name smoke-redis -d redis:alpine
+
+          for i in $(seq 1 60); do
+            docker exec smoke-postgis pg_isready -U bhudrishti -d bhudrishti_3d >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+          # --network host: container reaches the service containers on localhost
+          docker run --name smoke-backend --network host -d \
+            -e ENVIRONMENT=development \
+            -e POSTGRES_SERVER=localhost -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=bhudrishti \
+            -e POSTGRES_PASSWORD=bhudrishti_secure_spatial_2026 \
+            -e POSTGRES_DB=bhudrishti_3d \
+            -e REDIS_HOST=localhost -e REDIS_PORT=6379 \
+            "$BASE_IMAGE"
+
+          trap 'docker rm -f smoke-backend smoke-postgis smoke-redis >/dev/null 2>&1 || true' EXIT
+
+          ready=0
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8000/health; then ready=1; break; fi
+            sleep 1
+          done
+          [ "$ready" = "1" ] || { echo "FAIL: container never became healthy"; exit 1; }
+
+          code=$(curl -fsS -o /tmp/out -w %{http_code} http://127.0.0.1:8000/health)
+          [ "$code" = "200" ] && grep -q HEALTHY /tmp/out || { echo "FAIL: health check"; exit 1; }
+
+          code=$(curl -fsS -o /tmp/pdf -w %{http_code} \
+            http://127.0.0.1:8000/api/v1/exports/pdf/property-card/12345678901234)
+          [ "$code" = "200" ] && head -c 4 /tmp/pdf | grep -q '%PDF' || { echo "FAIL: property-card PDF"; exit 1; }
+
+          # This container is started with no ENABLE_DEMO_MODE, so it runs in the
+          # real-data configuration that actually ships. The synthetic surface
+          # must be refused there, not merely absent. A missing require_demo_mode
+          # in a future refactor would let the published image serve invented
+          # ULPINs and footprints behind a 200 while every other job stayed green.
+          echo "--- production default: demo gate must be shut ---"
+          for spec in \
+            "GET|/api/v1/properties/hero" \
+            "GET|/api/v1/precinct/stats" \
+            "GET|/api/v1/ids/national-ulpin/parcels?boundary_code=MH-AHMADNAGAR-NAGAR-1" \
+            "GET|/api/v1/lidar/pointcloud/binary?ulpin=12345678901234" \
+          ; do
+            m="${spec%%|*}"; p="${spec#*|}"
+            code=$(curl -sS -o /dev/null -w %{http_code} -X "$m" "http://127.0.0.1:8000$p")
+            case "$code" in
+              403|404|503) echo "PASS: $m $p refused ($code)" ;;
+              *) echo "FAIL: $m $p returned $code, expected 403/404/503"; exit 1 ;;
+            esac
+          done
+
+          # Pure computation is not synthetic and must not be gated shut.
+          code=$(curl -sS -o /dev/null -w %{http_code} \
+            http://127.0.0.1:8000/api/v1/ids/national-ulpin/spec)
+          [ "$code" = "200" ] || { echo "FAIL: pure ULPIN spec was gated ($code)"; exit 1; }
+
+          # The gate-shut property card must stay self-describing, not present
+          # the queried identifier as a verified record. Skipped explicitly if
+          # poppler is absent, so a missing tool never reads as a pass.
+          if command -v pdftotext >/dev/null 2>&1; then
+            if pdftotext /tmp/pdf - 2>/dev/null | grep -qiE 'VERIFIED RECORD|REGISTERED AND VERIFIED'; then
+              echo "FAIL: gate-shut property card asserts verification"; exit 1
+            fi
+            echo "PASS: gate-shut property card makes no verification claim"
+          else
+            echo "WARN: pdftotext unavailable, skipping PDF claim check"
+          fi
+
+          echo "PASS: backend image boots healthy, serves property cards, and refuses generated data"
+
+  frontend-image:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+          labels: |
+            org.opencontainers.image.title=Bhu-Drishti 3D Frontend
+            org.opencontainers.image.description=National 3D ULPIN visualization and ULPIN studio web application
+            org.opencontainers.image.licenses=Proprietary
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish:
+    name: Publish Images to GHCR
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
+    needs: [backend-image, frontend-image]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract backend metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Extract frontend metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          provenance: true
+          sbom: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          provenance: true
+          sbom: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
