@@ -1,0 +1,618 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "B-17",
+        "ground_z": 0.0,
+        "height_m": 18.0,
+        "levels": 6,
+        "basement_depth_m": 3.5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              145.0,
+              144.0
+            ],
+            [
+              175.0,
+              144.0
+            ],
+            [
+              175.0,
+              161.0
+            ],
+            [
+              145.0,
+              161.0
+            ],
+            [
+              145.0,
+              144.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-00",
+        "ground_z": 0.0,
+        "height_m": 12.5,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              150,
+              132
+            ],
+            [
+              160,
+              132
+            ],
+            [
+              160,
+              138
+            ],
+            [
+              150,
+              138
+            ],
+            [
+              150,
+              132
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-01",
+        "ground_z": 0.0,
+        "height_m": 9.5,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              165,
+              128
+            ],
+            [
+              178,
+              128
+            ],
+            [
+              178,
+              138
+            ],
+            [
+              165,
+              138
+            ],
+            [
+              165,
+              128
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-02",
+        "ground_z": 0.0,
+        "height_m": 15.5,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              128,
+              128
+            ],
+            [
+              142,
+              128
+            ],
+            [
+              142,
+              140
+            ],
+            [
+              128,
+              140
+            ],
+            [
+              128,
+              128
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-03",
+        "ground_z": 0.0,
+        "height_m": 10.8,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              178,
+              140
+            ],
+            [
+              190,
+              140
+            ],
+            [
+              190,
+              150
+            ],
+            [
+              178,
+              150
+            ],
+            [
+              178,
+              140
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-04",
+        "ground_z": 0.0,
+        "height_m": 11.2,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              118,
+              140
+            ],
+            [
+              128,
+              140
+            ],
+            [
+              128,
+              152
+            ],
+            [
+              118,
+              152
+            ],
+            [
+              118,
+              140
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-05",
+        "ground_z": 0.0,
+        "height_m": 13.8,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              120,
+              150
+            ],
+            [
+              132,
+              150
+            ],
+            [
+              132,
+              161
+            ],
+            [
+              120,
+              161
+            ],
+            [
+              120,
+              150
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-06",
+        "ground_z": 0.0,
+        "height_m": 8.4,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              132,
+              161
+            ],
+            [
+              145,
+              161
+            ],
+            [
+              145,
+              169
+            ],
+            [
+              132,
+              169
+            ],
+            [
+              132,
+              161
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-07",
+        "ground_z": 0.0,
+        "height_m": 9.9,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              175,
+              161
+            ],
+            [
+              186,
+              161
+            ],
+            [
+              186,
+              172
+            ],
+            [
+              175,
+              172
+            ],
+            [
+              175,
+              161
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-08",
+        "ground_z": 0.0,
+        "height_m": 12.0,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              150,
+              161
+            ],
+            [
+              165,
+              161
+            ],
+            [
+              165,
+              170
+            ],
+            [
+              150,
+              170
+            ],
+            [
+              150,
+              161
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-09",
+        "ground_z": 0.0,
+        "height_m": 10.5,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              186,
+              172
+            ],
+            [
+              198,
+              172
+            ],
+            [
+              198,
+              180
+            ],
+            [
+              186,
+              180
+            ],
+            [
+              186,
+              172
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-10",
+        "ground_z": 0.0,
+        "height_m": 7.8,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              140,
+              169
+            ],
+            [
+              150,
+              169
+            ],
+            [
+              150,
+              180
+            ],
+            [
+              140,
+              180
+            ],
+            [
+              140,
+              169
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-11",
+        "ground_z": 0.0,
+        "height_m": 14.2,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              162,
+              170
+            ],
+            [
+              176,
+              170
+            ],
+            [
+              176,
+              182
+            ],
+            [
+              162,
+              182
+            ],
+            [
+              162,
+              170
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-12",
+        "ground_z": 0.0,
+        "height_m": 6.9,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              126,
+              161
+            ],
+            [
+              139,
+              161
+            ],
+            [
+              139,
+              170
+            ],
+            [
+              126,
+              170
+            ],
+            [
+              126,
+              161
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-13",
+        "ground_z": 0.0,
+        "height_m": 8.8,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              176,
+              150
+            ],
+            [
+              184,
+              150
+            ],
+            [
+              184,
+              161
+            ],
+            [
+              176,
+              161
+            ],
+            [
+              176,
+              150
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-14",
+        "ground_z": 0.0,
+        "height_m": 9.6,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              142,
+              138
+            ],
+            [
+              150,
+              138
+            ],
+            [
+              150,
+              144
+            ],
+            [
+              142,
+              144
+            ],
+            [
+              142,
+              138
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "building_code": "CTX-15",
+        "ground_z": 0.0,
+        "height_m": 10.2,
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              160,
+              138
+            ],
+            [
+              165,
+              138
+            ],
+            [
+              165,
+              144
+            ],
+            [
+              160,
+              144
+            ],
+            [
+              160,
+              138
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
