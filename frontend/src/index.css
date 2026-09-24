@@ -1,0 +1,530 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+  background-color: #FFFFFF;
+  color: #1a1d23;
+
+  /* ---- Motion tokens -----------------------------------------------------
+   * One easing ladder for the whole product. Micro-interactions stay fast,
+   * scenes and reveals get the slow handles. Respect reduced-motion below. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --t-fast: 140ms;
+  --t-micro: 220ms;
+  --t-med: 320ms;
+  --t-slow: 600ms;
+  --t-cinema: 1200ms;
+
+  --nav-h: 64px;
+}
+
+html {
+  background-color: #FFFFFF;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #FFFFFF;
+  color: #1a1d23;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+code, kbd, samp, pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ---------- Editorial / spatial building blocks ---------- */
+
+/* Architectural-drawing annotation: tiny uppercase mono, wide tracked */
+.annotation {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* Hairline rule treatment for annotation clusters */
+.annotation-rule {
+  border-left: 1px solid rgba(26, 29, 35, 0.16);
+  padding-left: 0.75rem;
+}
+
+/* Display headline default: Inter Tight, tight, near-1.0 leading */
+.display-xl, .display-lg, .display-md {
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* Soft ring for the active 3D-focus state */
+.focus-hairline {
+  outline: none;
+}
+.focus-hairline:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgb(var(--accent) / 0.6);
+  border-radius: 4px;
+}
+
+/* Light mode crisp scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eef0ec;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cdd1c9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aab0a5;
+}
+
+/* Custom smooth transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Visible keyboard focus everywhere */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgb(var(--accent) / 0.55);
+  border-radius: 4px;
+}
+
+/* Subterranean clash pulse animation */
+@keyframes subterranean-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+}
+
+.animate-subterranean-pulse {
+  animation: subterranean-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Gentle rise-in used for info cards and panels */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise-in {
+  animation: rise-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+/* ==========================================================================
+   CINEMA — dark landing scope
+   Self-contained so the operational (light) app is untouched. The landing
+   wraps every element in `.landing-root` and inherits this palette.
+   ========================================================================== */
+
+.landing-root {
+  color-scheme: dark;
+  background: #03020a;
+  color: var(--ink-hi);
+  --bg-night: #03020a;
+  --bg-panel: #0b0d1c;
+  --bg-well: #0f1224;
+  --indigo-deep: #141857;
+  --royal: #2c2e94;
+  --royal-mid: #3f42b4;
+  --electric: #524bc7;
+  --violet: #7a63d7;
+  --soft-purple: #9b7ae0;
+  --text-bright: #f7f6f7;
+  --text-mid: #bfb8d0;
+  --text-faint: #8a86a0;
+  --ink-hi: #f7f6f7;
+  --ink-lo: #03020a;
+  --glass-bg: rgba(8, 9, 24, 0.42);
+  --ghost-bg: rgba(10, 11, 28, 0.35);
+  --hairline: rgba(140, 150, 255, 0.14);
+  --hairline-bright: rgba(150, 160, 255, 0.32);
+}
+
+/* Light mode — whole landing page flips its palette via this scope */
+.landing-root--light {
+  color-scheme: light;
+  background: #f4f6fb;
+  color: var(--ink-hi);
+  --bg-night: #eef1f7;
+  --bg-panel: #fbfcfe;
+  --bg-well: #f0f2f8;
+  --violet: #4f43b3;
+  --text-bright: #0b1226;
+  --text-mid: #33415c;
+  --text-faint: #5f6c88;
+  --ink-hi: #0b1226;
+  --ink-lo: #f4f6fb;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --ghost-bg: rgba(255, 255, 255, 0.6);
+  --hairline: rgba(20, 36, 76, 0.16);
+  --hairline-bright: rgba(20, 36, 76, 0.34);
+}
+
+.landing-root ::selection {
+  background: rgba(122, 99, 215, 0.4);
+  color: #fff;
+}
+
+/* Light-mode chrome on the same UI atoms */
+.landing-root--light ::selection {
+  background: rgba(122, 99, 215, 0.22);
+  color: #0b1226;
+}
+.landing-root--light .c-glass {
+  border-color: rgba(30, 50, 120, 0.16);
+}
+.landing-root--light .c-btn-ghost { background: var(--ghost-bg); }
+.landing-root--light .c-accent-text {
+  background: linear-gradient(96deg, #352a85 0%, #4f43b3 48%, #2c2e94 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.landing-root a {
+  color: inherit;
+}
+
+/* Thin cinematic scrollbar inside the landing scope only */
+.landing-root ::-webkit-scrollbar { width: 5px; height: 5px; }
+.landing-root ::-webkit-scrollbar-track { background: #03020a; }
+.landing-root ::-webkit-scrollbar-thumb { background: #26273f; border-radius: 3px; }
+.landing-root ::-webkit-scrollbar-thumb:hover { background: #3b3d5e; }
+.landing-root--light ::-webkit-scrollbar-track { background: #eef1f7; }
+.landing-root--light ::-webkit-scrollbar-thumb { background: #c3cadd; border-radius: 3px; }
+.landing-root--light ::-webkit-scrollbar-thumb:hover { background: #a6aec7; }
+
+/* Display type: editorial, tight, near-film leading */
+.landing-root .c-display {
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  color: var(--ink-hi);
+}
+.landing-root .c-display-xl { font-size: clamp(2.9rem, 8.2vw, 7.4rem); }
+.landing-root .c-display-lg  { font-size: clamp(2.2rem, 5.2vw, 4.4rem); }
+.landing-root .c-display-md  { font-size: clamp(1.6rem, 3.2vw, 2.6rem); }
+.landing-root .c-display-sm  { font-size: clamp(1.15rem, 1.9vw, 1.6rem); }
+
+/* Mono annotation — same skeleton as .annotation but with landing vars.
+   (Keep .annotation for the app; this variant participates in the palette.) */
+.landing-root .c-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+/* Gradient word treatment — rare electric→violet accent */
+.landing-root .c-accent-text {
+  background: linear-gradient(96deg, #7a63d7 0%, #9b7ae0 45%, #524bc7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing-root .c-accent-line {
+  background: linear-gradient(90deg, #514bc7, #7a63d7);
+}
+
+/* Frosted glass panel used for nav / HUD chips over the 3D scene */
+.landing-root .c-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid var(--hairline);
+}
+
+/* Bare hairline rules */
+.landing-root .c-hairline-top { border-top: 1px solid var(--hairline); }
+.landing-root .c-hairline-b { border-bottom: 1px solid var(--hairline); }
+
+/* Micro-interaction defaults inside the landing */
+.landing-root button,
+.landing-root a {
+  transition:
+    color var(--t-fast) var(--ease-out),
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out),
+    opacity var(--t-fast) var(--ease-out),
+    box-shadow var(--t-med) var(--ease-out);
+}
+
+/* Primary CTA — glass button with electric halo on hover */
+.landing-root .c-btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  background: rgba(122, 99, 215, 0.12);
+  border: 1px solid var(--hairline-bright);
+  box-shadow: 0 0 0 0 rgba(122, 99, 215, 0);
+}
+.landing-root .c-btn-cta:hover {
+  background: rgba(122, 99, 215, 0.28);
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px -6px rgba(122, 99, 215, 0.55);
+}
+.landing-root .c-btn-cta:active { transform: translateY(0); }
+
+.landing-root .c-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  border: 1px solid var(--hairline);
+  background: var(--ghost-bg);
+}
+.landing-root .c-btn-ghost:hover { color: var(--text-bright); border-color: var(--hairline-bright); }
+
+/* Scroll-pinned hero: the tall wrapper + sticky viewport */
+.landing-pin { position: relative; }
+.landing-pin__sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* Daylight hero mood — light-palette override, driven by the time toggle */
+.landing-root .landing-pin--day {
+  --text-bright: #0b1226;
+  --text-mid: #33415c;
+  --text-faint: #5f6c88;
+  --ink-hi: #0b1226;
+  --hairline: rgba(20, 36, 76, 0.16);
+  --hairline-bright: rgba(20, 36, 76, 0.34);
+  --violet: #4f43b3;
+}
+.landing-pin--day .c-glass {
+  background: rgba(255, 255, 255, 0.58);
+  border-color: rgba(30, 50, 120, 0.16);
+}
+.landing-pin--day .c-btn-cta { background: rgba(79, 67, 179, 0.1); box-shadow: 0 0 0 0 rgba(79, 67, 179, 0); }
+.landing-pin--day .c-btn-cta:hover { background: rgba(79, 67, 179, 0.18); box-shadow: 0 0 26px -8px rgba(79, 67, 179, 0.6); }
+.landing-pin--day .c-btn-ghost { background: rgba(255, 255, 255, 0.45); }
+.landing-pin--day .c-accent-text {
+  background: linear-gradient(96deg, #352a85 0%, #4f43b3 48%, #2c2e94 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Act overlay motion — a chip + headline unlock per act. Default off on
+   `prefers-reduced-motion` (see below) so content is never lost. */
+.landing-act {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  transition: opacity var(--t-cinema) var(--ease-out),
+    transform var(--t-cinema) var(--ease-out),
+    filter var(--t-cinema) var(--ease-out);
+}
+.landing-act.is-on {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+.landing-act.is-leaving {
+  opacity: 0;
+  transform: translateY(-10px);
+  filter: blur(4px);
+}
+
+/* HUD fade primitives driven by scroll progress */
+.landing-fade { opacity: 0; transition: opacity var(--t-slow) var(--ease-out); }
+.landing-fade.is-on { opacity: 1; }
+
+/* Leader line for the ULPIN reveal (SVG) */
+.landing-ulpin-line {
+  stroke: rgba(150, 160, 255, 0.55);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 5;
+  fill: none;
+  filter: drop-shadow(0 0 6px rgba(122, 99, 215, 0.6));
+}
+
+/* Soft travelling glow on the selected property */
+@keyframes c-property-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.035); }
+}
+.c-property-glow {
+  animation: c-property-glow 4.2s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* Progress rail segments */
+.landing-rail__seg { transition: background-color var(--t-med) var(--ease-out), box-shadow var(--t-med) var(--ease-out); }
+.landing-rail__seg.is-on {
+  background: linear-gradient(90deg, #7a63d7, #524bc7);
+  box-shadow: 0 0 12px -2px rgba(122, 99, 215, 0.7);
+}
+
+/* Section entrance within the landing body — intersection driven */
+.landing-body { opacity: 0; transform: translateY(24px); }
+.landing-body.is-in { opacity: 1; transform: translateY(0); }
+.landing-root .landing-body { transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out); }
+
+/* ---- Motion token helpers usable across the app (light theme too) */
+.motion-micro { transition-duration: var(--t-micro) !important; transition-timing-function: var(--ease-out) !important; }
+.motion-med { transition-duration: var(--t-med) !important; transition-timing-function: var(--ease-out) !important; }
+.motion-slow { transition-duration: var(--t-slow) !important; transition-timing-function: var(--ease-out) !important; }
+
+/* ---- View Transitions (progressive enhancement — ignored by older
+ *       browsers because the API simply won't be present). */
+@keyframes vt-slide {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vt-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+::view-transition-old(root) { animation: vt-fade 120ms var(--ease-in-out) both; }
+::view-transition-new(root) { animation: vt-slide 340ms var(--ease-out) both; }
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* In reduced-motion never hide act content behind pre-animation state */
+  .landing-act, .landing-fade, .landing-body { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .landing-pin__sticky { height: 100vh; }
+  .kinetic-marquee-left, .kinetic-marquee-fast, .kinetic-marquee-right { animation: none !important; }
+}
+
+/* ========================================================================= */
+/* DESIGN SYSTEM UTILITIES: SWISS, KINETIC, NEO-BRUTALIST, BOTANICAL         */
+/* ========================================================================= */
+
+/* --- 1. Swiss International Patterns --- */
+.swiss-grid-pattern {
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.swiss-dots {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.swiss-diagonal {
+  background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.03) 0, rgba(0, 0, 0, 0.03) 1px, transparent 0, transparent 10px);
+}
+
+/* --- 2. Kinetic Typography Marquee & Fast Transforms --- */
+@keyframes kinetic-scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes kinetic-scroll-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.kinetic-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: kinetic-scroll-left 22s linear infinite;
+}
+.kinetic-marquee-fast {
+  display: flex;
+  width: max-content;
+  animation: kinetic-scroll-left 14s linear infinite;
+}
+.kinetic-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: kinetic-scroll-right 28s linear infinite;
+}
+
+/* --- 3. Neo-Brutalism Halftone, Grid & Shadows --- */
+.neo-halftone {
+  background-image: radial-gradient(#000 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+.neo-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
+}
+.neo-text-stroke {
+  -webkit-text-stroke: 2px black;
+  color: transparent;
+}
+.neo-btn-push:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+/* --- 4. Botanical Paper Grain & Organic Arch --- */
+.botanical-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.botanical-arch {
+  border-top-left-radius: 180px;
+  border-top-right-radius: 180px;
+}
+/* --- App shell: brutalist focus indicator ------------------------------- *
+ * Enforced globally rather than per component. The ring utilities were only
+ * present on the shared primitives, so most interactive elements in the app
+ * (nav links, table rows, icon buttons, the section nav) had no visible focus
+ * state at all — a WCAG 2.4.7 failure. The landing is excluded because a black
+ * outline disappears against its dark surfaces. */
+.app-shell :focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 2px;
+}
+
+/* Mouse focus should not paint the indicator, but keyboard focus must. */
+.app-shell :focus:not(:focus-visible) {
+  outline: none;
+}
