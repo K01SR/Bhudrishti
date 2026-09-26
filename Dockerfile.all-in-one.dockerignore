@@ -1,0 +1,33 @@
+# Build context for the single-container image only.
+#
+# Docker prefers <dockerfile-name>.dockerignore over the repo-root .dockerignore,
+# so this affects Dockerfile.all-in-one and nothing else. The compose backend
+# and frontend builds keep using their own .dockerignore files.
+#
+# The context was 1.1 GB, nearly all of it data that no stage copies: the
+# GlobalML quadkey archives under data/ are 503 MB and old/ is 145 MB. Sending
+# that on every build cost minutes for files the build never reads.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/dist
+data
+old
+hmmmm
+tests
+docs
+*.tar.gz
+*.md
+!backend/**/*.md
+
+# Secrets. These live in .gitignore, but that only governs git: a .env on disk is
+# still inside the build context and would be COPY-able into a layer. Runtime
+# values are injected with --env-file on the host instead, so nothing here needs
+# to ship inside the image.
+**/.env
+**/.env.*
+!.env.example
+**/*.pem
+**/*.key

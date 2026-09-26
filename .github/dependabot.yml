@@ -1,0 +1,87 @@
+# Automated dependency updates.
+#
+# This existed as an intention only: .github/workflows/security.yml ran
+# pip-audit and npm audit, but with `continue-on-error: true` and `|| true`
+# respectively, so both reported findings and could never fail a build. Fourteen
+# advisories in starlette 0.38.6 sat there indefinitely. Reporting without a
+# gate is not monitoring.
+#
+# Weekly, grouped by ecosystem so a Python bump does not arrive entangled with
+# an npm one. Directories match the repo layout: the backend is not a
+# subdirectory with its own lockfile, so the backend job is rooted at ./backend.
+
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    labels: [dependencies, python]
+    # Security fixes are the point of the pip-audit job, so they are never
+    # held back for a grouping.
+    commit-message:
+      prefix: "pip"
+    groups:
+      python-security-patches:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["patch", "minor"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+    commit-message:
+      prefix: "npm"
+    groups:
+      # Vite/TS toolchain churn is noisy; runtime deps stay reviewable on their own.
+      frontend-runtime:
+        applies-to: version-updates
+        dependency-type: production
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    labels: [dependencies, docker]
+    commit-message:
+      prefix: "docker"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    labels: [dependencies, docker]
+    commit-message:
+      prefix: "docker"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: "ci"

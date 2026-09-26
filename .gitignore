@@ -1,0 +1,107 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+# Anchored to the repo root. Unanchored patterns match at ANY depth, so the
+# stock Python rules below were also matching frontend/src/lib/ -- silently
+# keeping seven required source files (cn, gltf, building3d, cadastre3d, ...)
+# out of the repository. A clean clone could not run tsc, and `docker build` of
+# the frontend runs tsc via `npm run build`, so the image build failed too. It
+# only ever worked on a machine that had the directory on disk already.
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/.eggs/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+
+# Node
+node_modules/
+dist/
+.npm/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.log
+*.pid
+
+# MinIO & Local Data Storage
+storage/data/
+storage/minio/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+old/
+hmmmm/
+
+# Local env secrets (never committed)
+.env
+
+# Belt and braces: keep the frontend's own source directories committable even
+# if an unanchored rule is reintroduced above. The leading slash on the rules
+# above is the real fix; this is the second line of defence.
+!frontend/src/lib/
+!frontend/src/assets/
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Rust
+target/
+**/target/
+
+# Generated spatio-temporal data artifacts (LAS, open-data cache)
+data/sample_pointcloud/
+data/osm_stream_cache.json
+data/opendata_cache.json
+backend/.opendata/
+
+# Database purge backups (rollback snapshots, not source)
+data/purge_backups/
+
+# Downloaded provider tiles/rasters (caches, not source)
+data/globalml/
+data/terrain/
+
+# Playwright e2e
+frontend/e2e/.artifacts/
+frontend/test-results/
+frontend/playwright-report/
+# LGD village directory build artifact. Rebuilt from the LGD exports with
+# scripts/build_lgd_villages.py; the manifest beside it is committed so the
+# vintage and row counts stay auditable.
+backend/app/data/lgd_villages.sqlite
+
+# Load-test output. Measurement runs, not source: the figures that belong in the
+# repository are transcribed into tests/load/README.md with their context.
+tests/load/results/
+
+# Fitted ML artifacts are reproduced by the training scripts, not committed.
+# floor_estimator.joblib was 272MB at 300 trees; 20MB at 120. The manifest
+# carries the metrics and the training is deterministic.
+backend/app/ml/artifacts/*.joblib

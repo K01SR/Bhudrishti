@@ -1,0 +1,40 @@
+# Edge proxy for the public hostname.
+#
+# This is additive. Nothing here replaces the existing frontend nginx: Caddy only
+# terminates TLS, redirects HTTP to HTTPS, and forwards to the frontend, which
+# keeps serving the SPA and proxying /api to the backend exactly as before. The
+# frontend's own nginx security headers, gzip and API proxying are untouched.
+#
+# Certificates are obtained and renewed automatically over ACME HTTP-01, which
+# needs ports 80 and 443 reachable from the internet and the hostname resolving
+# to this host. Both /data and /config are on named volumes, so a container
+# restart does not burn through Let's Encrypt's rate limits by re-issuing.
+#
+# {$DOMAIN} is supplied by the compose service. Local `tls internal` is NOT used
+# here: that would issue an untrusted certificate.
+
+{
+	# Caddy defaults to ZeroSSL, which will not register an account without an
+	# email address. Let's Encrypt does not require one, so pinning it here keeps
+	# this file working when ACME_EMAIL is unset instead of failing at startup.
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# The frontend nginx already sets these; repeating them in two layers tends
+	# to produce duplicates rather than stronger policy, so they stay in one
+	# place. See frontend/nginx-security-headers.conf.
+	reverse_proxy frontend:3000 {
+		# WebSocket upgrades for the streaming endpoints.
+		header_up Connection {>Connection}
+		header_up Upgrade {>Upgrade}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
