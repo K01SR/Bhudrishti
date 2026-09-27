@@ -1,0 +1,100 @@
+{
+  "dataset_id": "airoli-s8-hero-lidar",
+  "name": "Airoli Sector 8 Hero Case \u2014 Raw LiDAR (B-17 Vertical Cadastre)",
+  "created_at_utc": "2026-09-24T20:21:55.823481+00:00",
+  "crs": {
+    "epsg": 32643,
+    "name": "EPSG:32643 \u2014 WGS 84 / UTM zone 43N (projected)",
+    "local_frame_offset_m": [
+      0.0,
+      0.0
+    ],
+    "note": "Local cadastral frame; append UTM 43N easting/northing origin for georeferencing."
+  },
+  "sensor": {
+    "system": "Synthetic airborne LiDAR (demo) \u2014 VLP-like 16-beam scan pattern",
+    "accuracy_m": 0.05,
+    "point_density_target_pts_m2": 6.0
+  },
+  "license": "Open demo data \u2014 generated for evaluation; no airborne survey captured.",
+  "source_citation": "Bhu-Drishti 3D evaluation dataset (synthetic, deterministic seed 271828).",
+  "las_stats": {
+    "path": "/app/data/sample_pointcloud/airoli_s8_hero.las",
+    "point_count": 28800,
+    "bounds": {
+      "min": [
+        118.0,
+        119.49331620025671,
+        -3.491909878541484
+      ],
+      "max": [
+        199.5,
+        192.34122645714635,
+        18.059440197443365
+      ]
+    },
+    "classification_counts": {
+      "2": 18870,
+      "5": 1717,
+      "6": 8213
+    }
+  },
+  "ground_truth": {
+    "hero_building": {
+      "building_code": "B-17",
+      "footprint": [
+        [
+          145.0,
+          144.0
+        ],
+        [
+          175.0,
+          144.0
+        ],
+        [
+          175.0,
+          161.0
+        ],
+        [
+          145.0,
+          161.0
+        ]
+      ],
+      "ground_z": 0.0,
+      "levels": [
+        {
+          "code": "B1",
+          "min_z": -3.5,
+          "max_z": 0.0
+        },
+        {
+          "code": "G",
+          "min_z": 0.0,
+          "max_z": 3.6
+        },
+        {
+          "code": "L01",
+          "min_z": 3.6,
+          "max_z": 7.2
+        },
+        {
+          "code": "L02",
+          "min_z": 7.2,
+          "max_z": 10.8
+        },
+        {
+          "code": "L03",
+          "min_z": 10.8,
+          "max_z": 14.4
+        },
+        {
+          "code": "L04",
+          "min_z": 14.4,
+          "max_z": 18.0
+        }
+      ]
+    },
+    "fabric_blocks": 16,
+    "grove_anchors": 5
+  }
+}
