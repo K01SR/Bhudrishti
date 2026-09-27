@@ -1,0 +1,10 @@
+# Load-test only dependencies.
+#
+# Deliberately NOT in backend/requirements.txt. Locust pulls in a web server and
+# a large transitive tree; shipping it inside the application image would grow
+# the attack surface of every deployment for a tool that only runs against a
+# load-test target. Install these in a throwaway environment:
+#
+#   python -m venv /tmp/loadenv && /tmp/loadenv/bin/pip install -r tests/load/requirements.txt
+#
+locust>=2.31,<3
