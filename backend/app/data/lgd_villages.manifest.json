@@ -1,0 +1,310 @@
+{
+  "dataset": "Local Government Directory (LGD) villages",
+  "publisher": "Ministry of Panchayati Raj, Government of India",
+  "source_url": "https://lgdirectory.gov.in/downloadDirectory.do",
+  "report": "All Villages of a State (Xls Report)",
+  "retrieved_utc": "2026-10-01T20:11:33+00:00",
+  "note": "Administrative village directory. Carries official LGD codes, not parcel boundaries, ownership, plot area or land use.",
+  "state_entities": 36,
+  "state_entities_note": "The LGD directory publishes 36 state/union-territory entries. Chandigarh is published with no revenue villages, so 35 appear in the village table.",
+  "states_present": 35,
+  "total_villages": 677673,
+  "rows_by_state": {
+    "Andaman And Nicobar Islands": 559,
+    "Andhra Pradesh": 17957,
+    "Arunachal Pradesh": 5491,
+    "Assam": 29373,
+    "Bihar": 48927,
+    "Chhattisgarh": 20650,
+    "Delhi": 353,
+    "Goa": 429,
+    "Gujarat": 19199,
+    "Haryana": 7090,
+    "Himachal Pradesh": 21595,
+    "Jammu And Kashmir": 6857,
+    "Jharkhand": 32737,
+    "Karnataka": 30775,
+    "Kerala": 1666,
+    "Ladakh": 248,
+    "Lakshadweep": 27,
+    "Madhya Pradesh": 57497,
+    "Maharashtra": 44929,
+    "Manipur": 3850,
+    "Meghalaya": 7200,
+    "Mizoram": 887,
+    "Nagaland": 1570,
+    "Odisha": 51800,
+    "Puducherry": 129,
+    "Punjab": 13014,
+    "Rajasthan": 52593,
+    "Sikkim": 485,
+    "Tamil Nadu": 18681,
+    "Telangana": 11450,
+    "The Dadra And Nagar Haveli And Daman And Diu": 101,
+    "Tripura": 898,
+    "Uttar Pradesh": 110308,
+    "Uttarakhand": 17343,
+    "West Bengal": 41005
+  },
+  "sources": [
+    {
+      "archive": "downloadDir2026_10_01_22_33_35_949.zip",
+      "state": "Assam",
+      "rows_read": 29373,
+      "bytes": 2845317,
+      "sha256": "20c52ffa0adb370ec30f0e78dd149462332d2fb8712df008ce69e6790d90bb0d"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_41_08_018.zip",
+      "state": "Maharashtra",
+      "rows_read": 44929,
+      "bytes": 7828106,
+      "sha256": "528f880937f2a614bfe76f81299f0664000d511a522e6cb74289a4fbd66e8a17"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_41_50_585.zip",
+      "state": "Andaman And Nicobar Islands",
+      "rows_read": 559,
+      "bytes": 89300,
+      "sha256": "9c9de79da36b28e050ad14cb4554e1e09d74bc90bba1ba95e2bd958a0b35d0f8"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_42_02_827.zip",
+      "state": "Andhra Pradesh",
+      "rows_read": 17957,
+      "bytes": 6603320,
+      "sha256": "5320f2da60b33e7bad8312e51d715cc099d27d18dfd54810733a57f854ae7b27"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_42_15_545.zip",
+      "state": "Arunachal Pradesh",
+      "rows_read": 5491,
+      "bytes": 712478,
+      "sha256": "b584e6a788aa6278a3a76b414ba3a63eacb6523ab2e5f485a9c0a5d14372f723"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_42_28_825.zip",
+      "state": "Assam",
+      "rows_read": 29373,
+      "bytes": 2845389,
+      "sha256": "6e6fd52f1f909fe9e5d48c94a83111984165f1bf2173b8c4c344c02363d2b718"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_42_48_826.zip",
+      "state": "Bihar",
+      "rows_read": 48927,
+      "bytes": 6709773,
+      "sha256": "cc5f70137c83263532033c3ac87762366d4296308e1aa70e9fbb42e7872646b3"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_43_10_821.zip",
+      "state": "Chhattisgarh",
+      "rows_read": 20650,
+      "bytes": 5549540,
+      "sha256": "22b7e0a8dd425d037c8d39f226128ab6df98fafd5605fa076b461ca5b351c824"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_43_22_993.zip",
+      "state": "Delhi",
+      "rows_read": 353,
+      "bytes": 62898,
+      "sha256": "c3b848d5f1f36cffbf6d578028cddeb3d9986905a3b058d6369af7db3b80cae7"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_43_34_429.zip",
+      "state": "Goa",
+      "rows_read": 429,
+      "bytes": 97718,
+      "sha256": "682925d2e0c32ba0972f5865c1b706be9053060c2b726f208f7c4b94e042e85d"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_43_45_074.zip",
+      "state": "Gujarat",
+      "rows_read": 19199,
+      "bytes": 4015031,
+      "sha256": "3a63f81f255265f8b99903800ebb299feef2e286e9c1cd30dda88ad847ff4f1b"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_43_59_975.zip",
+      "state": "Haryana",
+      "rows_read": 7090,
+      "bytes": 1981495,
+      "sha256": "fe142f612fb0fb5d039ab083a5177e680924e56bb684ef807b6dcdf4a99d4954"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_44_10_743.zip",
+      "state": "Himachal Pradesh",
+      "rows_read": 21595,
+      "bytes": 2729973,
+      "sha256": "cff60854514656baeac185f5bd496bdcf41af65aac3989a3eb4101269833aa28"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_44_23_059.zip",
+      "state": "Jammu And Kashmir",
+      "rows_read": 6857,
+      "bytes": 1602663,
+      "sha256": "b233d63921bdd15f33fa5942cd8191686647938862407c1567ca37a8c5fb2a91"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_44_34_183.zip",
+      "state": "Jharkhand",
+      "rows_read": 32737,
+      "bytes": 4018172,
+      "sha256": "8b2f2eb7834bedc70c11ad54db4be7f125784f018994c87758ab94674b951e6c"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_45_46_192.zip",
+      "state": "Kerala",
+      "rows_read": 1666,
+      "bytes": 1276717,
+      "sha256": "71f32dae8676bc8d84de4220fa4c2434a4e9c23f0a3f21643b3c906ef86923b2"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_46_12_830.zip",
+      "state": "Ladakh",
+      "rows_read": 248,
+      "bytes": 76753,
+      "sha256": "5ea17b45863c3ec70b73494e3994f6028cc03d1ad1aa98fe630d092ff012951d"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_46_26_232.zip",
+      "state": "Lakshadweep",
+      "rows_read": 27,
+      "bytes": 20818,
+      "sha256": "c7b0dae333bb2b63c026f17259ba7c5661b4c63baa733d441948fb61a0ce4447"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_46_36_982.zip",
+      "state": "Madhya Pradesh",
+      "rows_read": 57497,
+      "bytes": 22282785,
+      "sha256": "667432b76162075134cf8a4bb3fd2ace0f9092b2f498d5226a936d085ec8f3ef"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_46_50_070.zip",
+      "state": "Maharashtra",
+      "rows_read": 44929,
+      "bytes": 7828103,
+      "sha256": "eab6ee2239a055a5eefb5361d8718c68c589581ffcfac99725e4889654b0d38d"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_47_01_951.zip",
+      "state": "Manipur",
+      "rows_read": 3850,
+      "bytes": 453593,
+      "sha256": "6e29e4b8c85deaeda7ba544c95f1e9c3a4fd3d3f5b8a8d33e86f0f78091ca4ed"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_47_13_420.zip",
+      "state": "Meghalaya",
+      "rows_read": 7200,
+      "bytes": 670755,
+      "sha256": "aee770605ad4828fa78374ffdd4a69bee85588e6d986a9c61149d65cd179f232"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_47_26_245.zip",
+      "state": "Mizoram",
+      "rows_read": 887,
+      "bytes": 116449,
+      "sha256": "f24a8e3d3570a274263d585d754c079c42518d22fe345e2c23cbf0b73fbf8bdf"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_47_47_409.zip",
+      "state": "Nagaland",
+      "rows_read": 1570,
+      "bytes": 194569,
+      "sha256": "f0cbefeaff2b6728fb4eefb169d918eb4564166bcadbe898a137f239292ad742"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_48_06_146.zip",
+      "state": "Odisha",
+      "rows_read": 51800,
+      "bytes": 5862471,
+      "sha256": "bcd214c74a1dbb759230f9caefc1afc4fc7499649742baea8af99c37ffeae9de"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_49_38_806.zip",
+      "state": "Puducherry",
+      "rows_read": 129,
+      "bytes": 47186,
+      "sha256": "1112328af63eb85f0c49934edb46eaac15f5ae3f26fe6c34ccf87e2d3ac42a4b"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_49_48_027.zip",
+      "state": "Punjab",
+      "rows_read": 13014,
+      "bytes": 3438525,
+      "sha256": "d88cdc56eb9bbd90fba9ed425d4e01b2708df8a39507d37828ddfae4e412c163"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_49_58_849.zip",
+      "state": "Rajasthan",
+      "rows_read": 52593,
+      "bytes": 7540327,
+      "sha256": "e9f2f88ab1295141374de4e37d48662af0207407794601bc524d8879ff8350fe"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_50_07_741.zip",
+      "state": "Sikkim",
+      "rows_read": 485,
+      "bytes": 98227,
+      "sha256": "4774755941d4b1d6555c2c8711844d55f59cdcd1560795d3a7602510c6ea9cc4"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_50_17_727.zip",
+      "state": "Tamil Nadu",
+      "rows_read": 18681,
+      "bytes": 4883378,
+      "sha256": "852b86797267707885d59d740f5d38e5609b7f11a8ae795a2fdbf8958c619921"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_50_31_675.zip",
+      "state": "Telangana",
+      "rows_read": 11450,
+      "bytes": 4628032,
+      "sha256": "5354b5fc1206098f9802ccf2639d80837a7267cf57455fa0caa6f6aaf80fb846"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_50_48_268.zip",
+      "state": "The Dadra And Nagar Haveli And Daman And Diu",
+      "rows_read": 101,
+      "bytes": 41070,
+      "sha256": "73f098a84701b3c366400bed961bc0e426d5aa6a5bfa3539368e78c757d23c8b"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_51_00_787.zip",
+      "state": "Tripura",
+      "rows_read": 898,
+      "bytes": 392686,
+      "sha256": "9038e83d53a5c8f2d1a65f972bc858156f33de8ec364e34f892f589f2558c96e"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_51_10_230.zip",
+      "state": "Uttarakhand",
+      "rows_read": 17343,
+      "bytes": 2763850,
+      "sha256": "8dc6a225eeac9ebb494b80229b69d072c1eec0876e574c469103a7a8bb63cb3d"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_51_22_104.zip",
+      "state": "Uttar Pradesh",
+      "rows_read": 110308,
+      "bytes": 25262026,
+      "sha256": "d840f515dc8ff98247d7e8f860d76ce83841ee510f4f194812774267087d9a7e"
+    },
+    {
+      "archive": "downloadDir2026_10_01_22_51_45_201.zip",
+      "state": "West Bengal",
+      "rows_read": 41005,
+      "bytes": 4777593,
+      "sha256": "7576954aa4cf5f8a61e4d6fd29b4464e8c7a23c9f9ac67a3a25c4f904f249b05"
+    },
+    {
+      "archive": "downloadDir2026_10_01_23_01_51_345.zip",
+      "state": "Karnataka",
+      "rows_read": 30775,
+      "bytes": 4866880,
+      "sha256": "173e3a3190b7629d3970bb04e56e724660101424a89b52ec75188549808e0d48"
+    }
+  ]
+}
