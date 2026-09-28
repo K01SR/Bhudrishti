@@ -1,0 +1,138 @@
+# Bhu-Drishti 3D Canonical Feature Registry
+# Maps system capabilities to verified source files, tests, APIs, and documentation.
+
+version: "2026.2"
+last_verified: "2026-09-28"
+
+# verification_level refers to the CODE: whether the capability exists, is reachable
+# and is covered by a test. It says nothing about whether the data behind it is real.
+# Read data_source for that. Six features are implemented and tested while serving
+# generated records, and an earlier version of this file marked all of them "verified"
+# with no data_source field at all, which read as a claim about the data.
+project: "Bhu-Drishti 3D Cadastre Prototype"
+
+features:
+  - id: 3d-property-card-pdf
+    name: "Official Form 3D Property Card PDF Generation"
+    status: implemented
+    verification_level: verified
+    data_source: "gated (generated demo records)"
+    source_files:
+      - backend/app/api/v1/exports.py
+      - backend/app/id_engine/latex_pdf_generator.py
+    tests:
+      - tests/test_api_endpoints.py:test_dynamic_property_card_pdf_and_latex
+    api:
+      - "GET /api/v1/exports/pdf/property-card/{ulpin}"
+      - "GET /api/v1/exports/latex/property-card/{ulpin}"
+    docs:
+      - docs/15-export-system.md
+      - docs/21-api-reference.md
+    description: "Renders a 4-page 3D property card vector PDF with a state seal motif, ULPIN badge and QR verification code."
+    caveats: >-
+      A prototype renderer, NOT an official Government of Maharashtra document: it is unsigned
+      and carries no departmental authority. The previous description called it "authentic"
+      and "official". It no longer synthesises a card for an arbitrary typed ULPIN. The "<
+      150ms" figure was never measured and has been removed; no latency is claimed.
+
+  - id: universal-lidar-streaming
+    name: "Universal Vectorized LiDAR Binary Point Cloud Streaming"
+    status: implemented
+    verification_level: verified
+    data_source: "gated (generated cloud) unless a real LAS/LAZ is ingested"
+    source_files:
+      - backend/app/api/v1/lidar.py
+      - frontend/src/components/lidarinspector/LiDARInspector.tsx
+    tests:
+      - tests/test_api_endpoints.py:test_universal_lidar_streaming_endpoints
+    api:
+      - "GET /api/v1/lidar/pointcloud"
+      - "GET /api/v1/lidar/pointcloud/binary"
+    docs:
+      - docs/09-lidar-system.md
+      - docs/21-api-reference.md
+    description: "Streams 6,500 - 15,000 classified points with RGB, elevation and intensity packed into raw Float32Array binary buffers (8 floats / 32 bytes per point)."
+    caveats: >-
+      The "sub-20ms" claim was unmeasured and is removed. The bundled airoli_s8_hero.las is
+      GENERATED (seed 271828, metadata declares no airborne survey occurred) and is gated; the
+      real path is app/pipelines/real_data_adapter.py for an uploaded survey file.
+
+  - id: unified-spatial-command-center
+    name: "Unified Master 3D Spatial Command Center"
+    status: implemented
+    verification_level: verified
+    data_source: "mixed - see features"
+    source_files:
+      - frontend/src/pages/app/MapPage.tsx
+      - frontend/src/components/openstudio/OpenTwinStudio.tsx
+      - frontend/src/components/map3d/PrecinctMap3D.tsx
+      - frontend/src/components/map2d/MapLibreCadastreMap.tsx
+    tests:
+      - tests/test_api_endpoints.py:test_osm_endpoints_and_geodetic_conversion
+    api:
+      - "GET /api/v1/precinct/buildings"
+      - "GET /api/v1/parcels/"
+    docs:
+      - docs/10-map-system.md
+      - docs/08-3d-engine.md
+    description: "Consolidates 3D Open Twin (Live OSM/GlobalML), 3D Precinct Twin, LiDAR Workstation, 2D Cadastre Atlas and Esri Satellite into a single tabbed spatial workspace."
+    caveats: "The cadastre tab serves the genuine admin_boundaries pyramid. The former national_parcels and national_twins tile layers are synthetic: parcels purged to 0 rows, twins gated behind ENABLE_DEMO_MODE."
+
+  - id: multi-building-precinct-heatmaps
+    name: "Multi-Building Precinct 3D Map & Heatmaps"
+    status: implemented
+    verification_level: verified
+    data_source: "GENERATED (synthetic_generator.py) - requires ENABLE_DEMO_MODE"
+    source_files:
+      - backend/app/api/v1/precinct.py
+      - backend/app/pipelines/synthetic_generator.py
+      - frontend/src/components/map3d/PrecinctMap3D.tsx
+    tests:
+      - tests/test_api_endpoints.py:test_precinct_buildings_and_heatmap
+    api:
+      - "GET /api/v1/precinct/buildings"
+      - "GET /api/v1/precinct/heatmap/{mode}"
+      - "GET /api/v1/precinct/stats"
+    docs:
+      - docs/10-map-system.md
+      - docs/21-api-reference.md
+    description: "Renders 13 precinct buildings with typology colouring, dynamic FSI/Risk heatmap mode and a 12-second flyover camera interpolation."
+    caveats: "All 13 buildings, their heights, floors and FSI values are GENERATED, not surveyed. Every one of these endpoints is demo-gated. The heatmap is therefore a visualisation of generated numbers and is labelled as such in the UI."
+
+  - id: blockchain-audit-ledger
+    name: "In-Process Merkle Audit Trail & Self-Healing"
+    status: implemented
+    verification_level: verified
+    data_source: "in-process Merkle chain over the audit event log; no real cadastral records and no external anchor"
+    source_files:
+      - backend/app/core/blockchain.py
+      - backend/app/api/v1/audit.py
+      - frontend/src/pages/app/AuditPage.tsx
+    tests:
+      - tests/test_blockchain_and_excel.py:test_blockchain_tamper_and_self_healing
+    api:
+      - "GET /api/v1/audit/events"
+      - "GET /api/v1/audit/verify-chain"
+      - "POST /api/v1/audit/heal"
+    docs:
+      - docs/14-audit-blockchain-system.md
+      - docs/17-security.md
+    description: "Tamper-evident SHA-256 Merkle audit trail with Ed25519 digital signatures and automated self-healing block restoration."
+
+  - id: role-based-dpdp-privacy
+    name: "Role-Based Navigation & DPDP 2023 Data Redaction"
+    status: implemented
+    verification_level: verified
+    data_source: "no external data source - the six roles and the redaction rules operate on the same records the other features use"
+    source_files:
+      - frontend/src/context/AppContext.tsx
+      - frontend/src/components/layout/AppShell.tsx
+      - frontend/src/components/workspace/RightsPanel.tsx
+    tests:
+      - tests/test_api_endpoints.py:test_demo_accounts_endpoint
+    api:
+      - "GET /api/v1/auth/demo-accounts"
+    docs:
+      - docs/16-authentication-authorization.md
+      - docs/17-security.md
+    description: "Enforces 6 distinct user roles and redacts private ownership identity and mortgage figures for Citizen/Public users per DPDP Act 2023."
