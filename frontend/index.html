@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563EB'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bhu-Drishti 3D | 3D Cadastre &amp; Vertical Property Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600;1,700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700;900&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* Accent — BRUTALIST ELECTRIC GREEN #00E55B, taken from the landing
+           page's light variant (BrutalistWireframeHero accentHexStr). The app
+           previously used Swiss red #FF3000. Green is a *fill* here, exactly as
+           the landing uses it: a filled block carries black text, never white,
+           so `accent-strong` is the darker green for accent-coloured text on
+           paper. LandingPage still hardcodes `isLightMode = false`, so that
+           light variant is currently unreachable; these are its values. */
+        --accent: 0 229 91;
+        /* Was 0 138 55. That green passed 4.5:1 on white (4.48) but not on the
+           tinted surfaces it is actually used against: accent-faint 3.93:1,
+           border 3.23:1, canvas 4.12:1. 40 text nodes failed WCAG AA as a
+           result. 0 112 44 clears 4.5:1 on all of them, including borders
+           (4.52:1), and stays recognisably the same green. */
+        --accent-strong: 0 112 44;
+        --accent-soft: 168 255 200;
+        --accent-sky: 214 255 226;
+        --accent-glow: 0 229 91;
+        /* Alt presets (swap the five lines above):
+           SWISS RED   #FF3000   --accent: 255 48 0;   --accent-strong: 191 30 0;  --accent-soft: 255 138 122; --accent-sky: 255 179 168; --accent-glow: 255 48 0;
+           GRAPHITE    #2E333C   --accent: 46 51 60;   --accent-strong: 26 29 35;  --accent-soft: 156 163 175; --accent-sky: 203 213 225; --accent-glow: 46 51 60;
+        */
+      }
+    </style>
+  </head>
+  <body class="bg-canvas text-ink antialiased font-sans overflow-x-hidden">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
