@@ -1,0 +1,27 @@
+/* Indeterminate progress bar for MapLoadingBar.
+   Kept in its own file because src/index.css is required to stay byte-identical
+   to its committed state, so a keyframe cannot be added there. */
+
+@keyframes map-progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(385%);
+  }
+}
+
+.animate-progress-indeterminate {
+  animation: map-progress-indeterminate 1100ms cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Respect the OS-level reduced-motion setting. The bar still appears and still
+   reports "still loading"; only the sliding motion is removed, because a
+   continuously translating element is exactly what that preference is about. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-progress-indeterminate {
+    animation: none;
+    width: 100% !important;
+    opacity: 0.6;
+  }
+}

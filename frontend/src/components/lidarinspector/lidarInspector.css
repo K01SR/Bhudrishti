@@ -1,0 +1,847 @@
+/* ==========================================================================
+   BHU-DRISHTI — LiDAR Inspection Instrument
+   A self-contained dark design system. Deliberately distinct from the app
+   shell: scientific instrument, not admin dashboard.
+   ========================================================================== */
+
+.lidar-insp {
+  --lidar-bg: #05070d;
+  --lidar-panel: rgba(10, 15, 24, 0.78);
+  --lidar-panel-solid: #0a0f18;
+  --lidar-border: rgba(148, 173, 214, 0.16);
+  --lidar-border-strong: rgba(148, 173, 214, 0.32);
+  --lidar-ink: #e6ecf6;
+  --lidar-ink-mut: #8fa0b8;
+  --lidar-ink-faint: #5a6b84;
+  --lidar-accent: #38bdf8;
+  --lidar-accent-2: #a78bfa;
+  --lidar-warn: #fbbf24;
+  --lidar-danger: #f87171;
+  --lidar-ok: #34d399;
+  --lidar-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, 'Fira Code', Menlo, Consolas, monospace;
+  --lidar-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--lidar-bg);
+  color: var(--lidar-ink);
+  font-family: var(--lidar-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.01em;
+}
+
+.lidar-insp *,
+.lidar-insp *::before,
+.lidar-insp *::after {
+  box-sizing: border-box;
+}
+
+/* --- canvas layers --------------------------------------------------- */
+.lidar-insp__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.lidar-insp__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3;
+}
+
+.lidar-insp__ui {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.lidar-insp__ui > * {
+  pointer-events: auto;
+}
+
+/* --- labels (projected into 3D) -------------------------------------- */
+.lidar-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -110%);
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: var(--lidar-mono);
+  font-size: 10.5px;
+  line-height: 1.4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  transition: opacity 120ms ease;
+}
+
+.lidar-label--prop {
+  color: rgba(184, 212, 255, 0.95);
+  border: 1px solid rgba(122, 162, 214, 0.35);
+  background: rgba(6, 10, 18, 0.72);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+.lidar-label--prop::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid rgba(122, 162, 214, 0.35);
+}
+
+.lidar-label--measure {
+  color: #9be5ff;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: rgba(6, 15, 24, 0.85);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* --- panels ----------------------------------------------------------- */
+.li-panel {
+  background: var(--lidar-panel);
+  border: 1px solid var(--lidar-border);
+  border-radius: 10px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.li-panel--flush {
+  border-radius: 0;
+}
+
+/* --- buttons ----------------------------------------------------------- */
+.li-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--lidar-ink-mut);
+  font-family: var(--lidar-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  padding: 6px 9px;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+  user-select: none;
+}
+
+.li-btn:hover {
+  color: var(--lidar-ink);
+  background: rgba(148, 173, 214, 0.08);
+}
+
+.li-btn:focus-visible,
+.li-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--lidar-accent);
+}
+
+.li-btn--active {
+  color: var(--lidar-accent);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.li-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--lidar-ink-mut);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 130ms ease, background 130ms ease;
+}
+
+.li-icon:hover {
+  color: var(--lidar-ink);
+  background: rgba(148, 173, 214, 0.08);
+}
+
+.li-icon--active {
+  color: var(--lidar-accent);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.18), rgba(56, 189, 248, 0.06));
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.25);
+}
+
+.li-icon--warn {
+  color: var(--lidar-warn);
+}
+
+.li-icon .li-kbd {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  font-size: 8px;
+  line-height: 1;
+  font-family: var(--lidar-mono);
+  color: var(--lidar-ink-faint);
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-2px);
+  white-space: nowrap;
+  background: var(--lidar-panel-solid);
+  border: 1px solid var(--lidar-border);
+  color: var(--lidar-ink);
+  font-family: var(--lidar-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  padding: 5px 8px;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 60;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* --- top chrome --------------------------------------------------------- */
+.li-topbar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.li-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.li-brand__mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(140deg, #2563eb, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(56, 99, 246, 0.4);
+}
+
+.li-brand__name {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--lidar-ink);
+}
+
+.li-brand__sub {
+  font-family: var(--lidar-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.28em;
+  color: var(--lidar-ink-mut);
+  margin-top: 2px;
+}
+
+.li-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--lidar-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: var(--lidar-warn);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.li-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(360px, 34vw);
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--lidar-panel);
+  border: 1px solid var(--lidar-border);
+  backdrop-filter: blur(14px);
+  color: var(--lidar-ink-mut);
+  transition: border-color 140ms ease;
+}
+
+.li-search:focus-within {
+  border-color: var(--lidar-border-strong);
+}
+
+.li-search input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--lidar-ink);
+  font-family: var(--lidar-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.li-search input::placeholder {
+  color: var(--lidar-ink-faint);
+}
+
+.li-property-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  min-width: 150px;
+}
+
+.li-property-chip__label {
+  font-family: var(--lidar-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.24em;
+  color: var(--lidar-ink-faint);
+  text-transform: uppercase;
+}
+
+.li-property-chip__value {
+  font-family: var(--lidar-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lidar-accent);
+  letter-spacing: 0.05em;
+}
+
+.li-icon-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--lidar-ink-mut);
+}
+
+.li-icon-close:hover {
+  color: var(--lidar-ink);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+/* --- left rail ----------------------------------------------------------- */
+.li-rail {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  z-index: 20;
+}
+
+.li-rail__sep {
+  height: 1px;
+  background: var(--lidar-border);
+  margin: 3px 6px;
+}
+
+/* --- right drawer --------------------------------------------------------- */
+.li-drawer {
+  position: absolute;
+  top: 70px;
+  right: 14px;
+  width: 292px;
+  max-height: calc(100% - 150px);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  animation: lidarDrawerIn 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes lidarDrawerIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.li-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--lidar-border);
+}
+
+.li-drawer__title {
+  font-family: var(--lidar-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lidar-ink);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.li-drawer__body {
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.li-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--lidar-mono);
+  font-size: 11px;
+}
+
+.li-row__k {
+  color: var(--lidar-ink-mut);
+  letter-spacing: 0.06em;
+}
+
+.li-row__v {
+  color: var(--lidar-ink);
+  font-weight: 600;
+  text-align: right;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.li-rule {
+  height: 1px;
+  background: var(--lidar-border);
+  margin: 2px 0;
+}
+
+.li-seg {
+  display: flex;
+  gap: 4px;
+}
+
+.li-seg .li-btn {
+  flex: 1;
+  padding: 6px 6px;
+  font-size: 10px;
+  justify-content: center;
+}
+
+.li-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.li-slider-row__labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--lidar-mono);
+  font-size: 10px;
+  color: var(--lidar-ink-mut);
+}
+
+.li-slider-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--lidar-accent);
+  height: 16px;
+  cursor: pointer;
+}
+
+.li-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--lidar-border);
+  background: rgba(148, 173, 214, 0.05);
+  color: var(--lidar-ink);
+  font-family: var(--lidar-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+
+.li-action:hover {
+  background: rgba(148, 173, 214, 0.1);
+  border-color: var(--lidar-border-strong);
+}
+
+.li-action--accent {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: var(--lidar-accent);
+}
+
+.li-action--accent:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.li-action--danger {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--lidar-danger);
+}
+
+/* --- legend -------------------------------------------------------------- */
+.li-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  z-index: 12;
+  max-width: 210px;
+}
+
+.li-legend__title {
+  font-family: var(--lidar-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lidar-ink-faint);
+}
+
+.li-legend__bar {
+  height: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--lidar-border);
+}
+
+.li-legend__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--lidar-mono);
+  font-size: 9px;
+  color: var(--lidar-ink-mut);
+}
+
+.li-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lidar-mono);
+  font-size: 10.5px;
+  color: var(--lidar-ink-mut);
+}
+
+.li-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* --- status bar ----------------------------------------------------------- */
+.li-status {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-family: var(--lidar-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--lidar-ink-mut);
+}
+
+.li-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lidar-ok);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.8);
+  margin-right: 6px;
+}
+
+.li-status__item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.li-status__item b {
+  color: var(--lidar-ink);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.li-status__spacer {
+  flex: 1;
+}
+
+/* --- hint / empty ---------------------------------------------------------- */
+.li-hint {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-family: var(--lidar-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--lidar-ink-mut);
+  z-index: 12;
+  animation: lidarPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes lidarPulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* --- overlays (loading / error) ------------------------------------------- */
+.li-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: radial-gradient(120% 120% at 50% 30%, #0a1120 0%, #04060b 68%);
+}
+
+.li-overlay__mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, #2563eb, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 20px;
+  color: #fff;
+  box-shadow: 0 10px 40px rgba(56, 99, 246, 0.45);
+  animation: lidarBreath 2.2s ease-in-out infinite;
+}
+
+@keyframes lidarBreath {
+  0%,
+  100% {
+    box-shadow: 0 10px 40px rgba(56, 99, 246, 0.45);
+  }
+  50% {
+    box-shadow: 0 10px 56px rgba(124, 58, 237, 0.6);
+  }
+}
+
+.li-overlay__title {
+  font-family: var(--lidar-mono);
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  color: var(--lidar-ink);
+  font-weight: 700;
+}
+
+.li-overlay__sub {
+  font-family: var(--lidar-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--lidar-ink-mut);
+  text-align: center;
+  padding: 0 24px;
+  line-height: 1.7;
+}
+
+.li-progress {
+  width: min(300px, 70vw);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 173, 214, 0.12);
+  overflow: hidden;
+}
+
+.li-progress__bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #a78bfa);
+  width: 0%;
+  transition: width 160ms ease;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.7);
+}
+
+.li-overlay__error {
+  color: var(--lidar-danger);
+  font-family: var(--lidar-mono);
+}
+
+.li-overlay__error-detail {
+  font-family: var(--lidar-mono);
+  font-size: 11px;
+  color: var(--lidar-ink-mut);
+  max-width: 420px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* --- utilities ------------------------------------------------------------ */
+.li-mono {
+  font-family: var(--lidar-mono);
+}
+
+.li-tiny {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lidar-ink-faint);
+}
+
+.li-ok {
+  color: var(--lidar-ok);
+}
+
+.li-accent {
+  color: var(--lidar-accent);
+}
+
+.li-faint {
+  color: var(--lidar-ink-faint);
+}
+
+.li-muted {
+  color: var(--lidar-ink-mut);
+}
+
+.li-divider {
+  height: 1px;
+  background: var(--lidar-border);
+  margin: 2px 0;
+}
+
+/* --- responsive ----------------------------------------------------------- */
+@media (max-width: 720px) {
+  .li-topbar {
+    flex-wrap: wrap;
+  }
+
+  .li-brand__sub,
+  .li-search {
+    display: none;
+  }
+
+  .li-property-chip {
+    min-width: 0;
+    max-width: 130px;
+  }
+
+  .li-drawer {
+    position: absolute;
+    top: auto;
+    bottom: 60px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: 46%;
+  }
+
+  .li-rail {
+    left: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .li-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .li-status {
+    left: 8px;
+    right: 8px;
+    gap: 8px;
+    font-size: 9px;
+  }
+
+  .li-legend {
+    left: 8px;
+    bottom: 90px;
+  }
+
+  .li-hint {
+    bottom: 80px;
+  }
+}
+
+/* --- reduced motion ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .lidar-insp *,
+  .lidar-insp *::before,
+  .lidar-insp *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
