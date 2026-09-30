@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "verified_features": 6,
+  "verified_source_files": 17,
+  "verified_documentation_files": 12,
+  "errors": [],
+  "warnings": [],
+  "verified_endpoints": [
+    "GET /api/v1/exports/pdf/property-card/{ulpin}",
+    "GET /api/v1/exports/latex/property-card/{ulpin}",
+    "GET /api/v1/lidar/pointcloud",
+    "GET /api/v1/lidar/pointcloud/binary",
+    "GET /api/v1/precinct/buildings",
+    "GET /api/v1/parcels/",
+    "GET /api/v1/precinct/buildings",
+    "GET /api/v1/precinct/heatmap/{mode}",
+    "GET /api/v1/precinct/stats",
+    "GET /api/v1/audit/events",
+    "GET /api/v1/audit/verify-chain",
+    "POST /api/v1/audit/heal",
+    "GET /api/v1/auth/demo-accounts"
+  ]
+}

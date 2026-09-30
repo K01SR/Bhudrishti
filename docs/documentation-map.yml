@@ -1,0 +1,104 @@
+# Bhu-Drishti 3D Documentation Impact Map
+# Maps source files to dependent documentation chapters to track documentation drift.
+
+version: "2026.1"
+
+mappings:
+  backend/app/pipelines/lgd_villages.py:
+    - docs/42-real-data-sources.md
+    - docs/10-map-system.md
+    - docs/21-api-reference.md
+    - docs/00-master-system-documentation.md
+    - README.md
+
+  backend/app/sources/nominatim.py:
+    - docs/42-real-data-sources.md
+    - docs/10-map-system.md
+    - docs/21-api-reference.md
+
+  scripts/build_lgd_villages.py:
+    - docs/42-real-data-sources.md
+    - docs/05-ingestion.md
+
+  backend/app/sources/terrain.py:
+    - docs/42-real-data-sources.md
+    - docs/08-3d-engine.md
+    - docs/10-map-system.md
+
+  backend/app/sources/globalml.py:
+    - docs/42-real-data-sources.md
+    - docs/08-3d-engine.md
+
+  backend/app/sources/openstreetmap.py:
+    - docs/42-real-data-sources.md
+    - docs/08-3d-engine.md
+
+  backend/app/api/v1/evidence.py:
+    - docs/42-real-data-sources.md
+    - docs/08-verification-workflow.md
+
+  backend/app/api/v1/ids.py:
+    - docs/42-real-data-sources.md
+    - docs/04-id-spec.md
+
+  backend/app/api/v1/search.py:
+    - docs/42-real-data-sources.md
+    - docs/10-map-system.md
+    - docs/21-api-reference.md
+    - docs/00-master-system-documentation.md
+
+  backend/app/api/v1/locations.py:
+    - docs/42-real-data-sources.md
+    - docs/10-map-system.md
+    - docs/21-api-reference.md
+    - docs/00-master-system-documentation.md
+
+  backend/app/api/v1/exports.py:
+    - docs/15-export-system.md
+    - docs/21-api-reference.md
+    - docs/00-master-system-documentation.md
+    - README.md
+
+  backend/app/api/v1/lidar.py:
+    - docs/09-lidar-system.md
+    - docs/21-api-reference.md
+    - docs/18-performance.md
+    - docs/41-phase1c-lidar-availability.md
+    - docs/00-master-system-documentation.md
+    - README.md
+
+  backend/app/core/lidar_coverage.py:
+    - docs/09-lidar-system.md
+    - docs/41-phase1c-lidar-availability.md
+    - docs/00-master-system-documentation.md
+
+  backend/app/api/v1/precinct.py:
+    - docs/10-map-system.md
+    - docs/21-api-reference.md
+    - docs/00-master-system-documentation.md
+
+  backend/app/core/blockchain.py:
+    - docs/14-audit-blockchain-system.md
+    - docs/17-security.md
+    - docs/00-master-system-documentation.md
+
+  frontend/src/pages/app/MapPage.tsx:
+    - docs/10-map-system.md
+    - docs/08-3d-engine.md
+    - docs/35-design-system.md
+    - README.md
+
+  frontend/src/components/viewer3d/ThreeCadastralViewer.tsx:
+    - docs/08-3d-engine.md
+    - docs/11-property-system.md
+    - docs/36-ui-ux-reference.md
+
+  frontend/src/components/lidarinspector/LiDARInspector.tsx:
+    - docs/09-lidar-system.md
+    - docs/18-performance.md
+    - docs/36-ui-ux-reference.md
+
+  frontend/src/context/AppContext.tsx:
+    - docs/16-authentication-authorization.md
+    - docs/17-security.md
+    - docs/35-design-system.md
