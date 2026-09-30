@@ -1,0 +1,71 @@
+# Development overlay. Never used on its own:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#   make dev-up
+#
+# It replaces the production commands with source watchers:
+#   backend  -> uvicorn --reload (watchfiles ships with uvicorn[standard])
+#   worker   -> watchfiles restarts celery (celery 5.6 has no --reload flag)
+#   frontend -> Vite dev server on the Dockerfile `build` stage, with HMR
+#
+# The base stack still owns postgres/redis, env interpolation, healthchecks,
+# networks and the ./backend + ./data bind mounts; this file overrides only
+# command/build and the frontend source mounts.
+
+services:
+  backend:
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --reload
+      # Watch application code only. /app/data and /app/.opendata are runtime
+      # write targets; watching them would reload the server in a loop.
+      - --reload-dir
+      - /app/app
+
+  worker:
+    # Celery 5.6 dropped/never had --reload, so watchfiles owns the process and
+    # restarts celery on change. `--target-type command` runs the target as an
+    # argv with no shell. SIGINT is given 30s so an in-flight task can complete a
+    # warm shutdown before it is SIGKILLed.
+    command:
+      - watchfiles
+      - --target-type
+      - command
+      - --sigint-timeout
+      - "30"
+      - --ignore-paths
+      - data,.opendata,tests,scripts
+      - celery -A app.worker.celery_app worker --loglevel=info
+      - /app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # Run from the named `build` stage, which already executed `npm ci`.
+      target: build
+    command: ["npm", "run", "dev"]
+    environment:
+      # chokidar (Vite's file watcher) reads this. Native inotify works on Linux
+      # bind mounts, so it defaults off; set VITE_USE_POLLING=1 for Docker
+      # Desktop / WSL / network filesystems where inotify does not fire.
+      - CHOKIDAR_USEPOLLING=${VITE_USE_POLLING:-0}
+    volumes:
+      - ./frontend:/app
+      # Named volume so the image's installed /app/node_modules is not shadowed
+      # by the host directory (which may be absent or the wrong platform).
+      - frontend_dev_node_modules:/app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 10s
+
+volumes:
+  frontend_dev_node_modules:
