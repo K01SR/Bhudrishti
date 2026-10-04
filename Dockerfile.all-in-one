@@ -20,7 +20,7 @@
 # volume serves no synthetic Airoli records.
 
 # ---- Frontend: build the static bundle -------------------------------------
-FROM node:20-alpine AS frontend-build
+FROM node:26-alpine AS frontend-build
 WORKDIR /fe
 COPY frontend/package*.json ./
 RUN npm ci
