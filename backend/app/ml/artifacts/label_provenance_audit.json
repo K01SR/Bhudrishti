@@ -1,0 +1,15 @@
+{
+  "audited_table": "national_twins.floors",
+  "verdict": "implausible_for_observations",
+  "usable_as_label": false,
+  "n_labels": 45489,
+  "modal_value": 10,
+  "modal_share": 0.281,
+  "low_tail_share": 0.983271,
+  "entropy_ratio": 0.3748,
+  "inversion_rate": 0.1786,
+  "reasons": [
+    "within storey values 3-34, the largest bucket holds 336x the median populated bucket; a range draw leaves near-empty buckets between its spikes, which observed buildings do not"
+  ],
+  "interpretation": "This distribution is not consistent with observed buildings. It is consistent with a value drawn from a range, so any model trained on it learns the generator rather than the city."
+}
