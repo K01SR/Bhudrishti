@@ -16,7 +16,7 @@
 # starlette is now also pinned explicitly rather than left to fastapi's
 # resolution, so a future fastapi range cannot silently walk it back into a
 # vulnerable version without a visible diff.
-fastapi>=0.142.0,<0.143.0
+fastapi>=0.142.2,<0.143.0
 starlette>=1.3.1,<2.0.0
 uvicorn[standard]>=0.30.0
 pydantic>=2.7.0
