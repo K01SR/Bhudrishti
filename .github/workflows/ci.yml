@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload Pytest Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-report
           path: artifacts/pytest.xml
@@ -197,7 +197,7 @@ jobs:
 
       - name: Upload API Smoke Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-smoke-report
           path: artifacts/api-smoke.json
@@ -344,7 +344,7 @@ jobs:
 
       - name: Upload Production Gate Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: production-gate-report
           path: artifacts/production-gate.json
@@ -528,7 +528,7 @@ jobs:
 
       - name: Upload Playwright report and traces
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: frontend/e2e/.artifacts
@@ -555,7 +555,7 @@ jobs:
         run: python3 scripts/verify-docs.py
 
       - name: Upload Verification Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: documentation-verification-report
           path: artifacts/documentation-verification.json
