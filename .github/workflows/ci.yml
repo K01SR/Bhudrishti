@@ -45,7 +45,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -124,7 +124,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -245,7 +245,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -355,7 +355,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -434,7 +434,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -541,7 +541,7 @@ jobs:
     needs: [backend-tests, frontend-build]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v5
