@@ -54,7 +54,7 @@ RUN cargo build --release
 #
 # The cost is that shapely/pyproj/gdal/rasterio are installed from
 # backend/requirements.txt again here, which is the slowest step in the build.
-FROM python:3.11-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 ARG POSTGRES_DB=bhudrishti_3d
 ARG POSTGRES_USER=bhudrishti
